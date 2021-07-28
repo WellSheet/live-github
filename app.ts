@@ -1,11 +1,25 @@
-const express = require("express");
-const app = express();
-const port = 3000;
+import { App } from "octokit";
+import dotenv from "dotenv";
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+dotenv.config({ path: "./.env.local" });
 
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
-});
+const appId = process.env.GITHUB_APP_ID;
+const privateKey = process.env.GITHUB_PRIVATE_KEY;
+const repo = process.env.GITHUB_REPO;
+const owner = process.env.GITHUB_OWNER;
+const installationId = parseInt(process.env.GITHUB_INSTALLATION_ID);
+
+console.log(privateKey);
+
+const app = new App({ appId, privateKey });
+
+const fetchGithubPullRequests = async () => {
+  const octokit = await app.getInstallationOctokit(installationId);
+
+  const pullRequests = await octokit.rest.pulls.list({ owner, repo });
+
+  console.log(pullRequests.data.length);
+  return pullRequests;
+};
+
+fetchGithubPullRequests();
