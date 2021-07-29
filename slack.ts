@@ -75,7 +75,7 @@ export const addReviewersToChannel = async (
     .map((reviewer: User) => {
       return gitUserToSlackId[reviewer.login];
     })
-    .concat(gitUserToSlackId[pull.assignee.login])
+    .concat(gitUserToSlackId[pull.user.login])
     .join(",");
 
   try {
