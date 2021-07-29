@@ -76,8 +76,9 @@ const onChangePull = async (pull: PullRequest) => {
     await addComment(githubApp, pull.number, pullChannel);
   }
 
-  if (!pullChannel.is_archived)
+  if (!pullChannel.is_archived) {
     await addReviewersToChannel(slackApp, pull, pullChannel);
+  }
 
   if (pull.state === "closed") {
     await slackApp.client.conversations.archive({ channel: pullChannel.id });
@@ -88,7 +89,6 @@ const onChangePull = async (pull: PullRequest) => {
 
   const slackText = slackTextFromPullRequest(pull);
   await slackApp.client.chat.update({ channel: pullChannel.id, ts: botComment.ts, text: slackText })
-
 };
 
 webhooks.on("pull_request", async ({ payload }) => {
