@@ -61,6 +61,8 @@ const onChangePull = async (pull: PullRequest) => {
     await addComment(githubApp, pull.number, pullChannel);
   }
 
+  await addComment(githubApp, pull.number, pullChannel);
+
   console.log(pullChannel);
 };
 

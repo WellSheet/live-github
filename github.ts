@@ -12,8 +12,8 @@ export const addComment = async (
 
   try {
     await octokit.rest.issues.createComment({
-      owner: process.env.GITHUB_REPO,
-      repo: process.env.GITHUB_OWNER,
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO,
       issue_number,
       body: `https://slack.com/app_redirect?channel=${channel.id}`,
     });
