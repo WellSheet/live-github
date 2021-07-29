@@ -12,6 +12,7 @@ import {
   addReviewersToChannel,
   createPullChannel,
   getSlackChannels,
+  slackTextFromPullRequest,
 } from "./slack";
 import { addComment } from "./github";
 import { PullRequest, User } from "@octokit/webhooks-types";
@@ -81,6 +82,13 @@ const onChangePull = async (pull: PullRequest) => {
   if (pull.state === "closed") {
     await slackApp.client.conversations.archive({ channel: pullChannel.id });
   }
+
+  const botCommentResponse = await slackApp.client.conversations.history({ channel: pullChannel.id, oldest: '0', limit: 1})
+  const botComment = botCommentResponse.messages[0]
+
+  const slackText = slackTextFromPullRequest(pull);
+  await slackApp.client.chat.update({ channel: pullChannel.id, ts: botComment.ts, text: slackText })
+
 };
 
 webhooks.on("pull_request", async ({ payload }) => {

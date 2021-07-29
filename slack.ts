@@ -31,6 +31,18 @@ export const getPrChannels = (channels: Channel[]) => {
   );
 };
 
+export const slackTextFromPullRequest = (pull: PullRequest): string => {
+return `
+PR Opened! [#${pull.number}](${pull.url})
+
+PR Title: \`${pull.title}\`
+PR Description:
+\`\`\`
+${pull.body}
+\`\`\`
+`;
+}
+
 export const createPullChannel = async (
   slackApp: SlackApp,
   pull: PullRequest
@@ -41,15 +53,7 @@ export const createPullChannel = async (
 
   // send the body as the first message
   if (pull.body) {
-    const text = `
-PR Opened! [#${pull.number}](${pull.url})
-
-PR Title: \`${pull.title}\`
-PR Description:
-\`\`\`
-${pull.body}
-\`\`\`
-`;
+    const text = slackTextFromPullRequest(pull);
 
     await slackApp.client.chat.postMessage({
       channel: newChannel.channel.id,
