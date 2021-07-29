@@ -67,10 +67,10 @@ const getPrChannels = (channels: Channel[]) => {
   );
 };
 
-(async () => {
-  const port = process.env.PORT || '3000';
-  expressApp.listen(parseInt(port));
+const port = process.env.PORT || '3000';
+expressApp.listen(parseInt(port));
 
+const main = async () => {
   const octokit = await githubApp.getInstallationOctokit(
     parseInt(process.env.GITHUB_INSTALLATION_ID)
   );
@@ -116,7 +116,7 @@ const getPrChannels = (channels: Channel[]) => {
   );
 
   //create channels for PRs
-  await pullsWithoutChannel.map(async (pull) => {
+  pullsWithoutChannel.map(async (pull) => {
     try {
       /*
       const newChannel = await slackApp.client.conversations.create({
@@ -178,5 +178,4 @@ const addReview = async () => {
   }
 };
 
-addReview();
-
+// addReview();
