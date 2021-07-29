@@ -49,7 +49,7 @@ export const createPullChannel = async (
 ): Promise<Channel> => {
   try {
     const newChannel = await slackApp.client.conversations.create({
-      name: `pr-${pull.number}-${process.env.GITHUB_REPO}`,
+      name: `pr-${pull.number}-${pull.base.repo.name}`,
     });
 
     const text = slackTextFromPullRequest(pull);

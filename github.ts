@@ -1,10 +1,11 @@
 import { App as GithubApp } from "octokit";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
 import { SayFn, SlashCommand } from "@slack/bolt";
+import { PullRequest } from "@octokit/webhooks-types";
 
 export const addInitialComment = async (
   githubApp: GithubApp,
-  issue_number: number,
+  pull: PullRequest,
   channel: Channel
 ) => {
   const octokit = await githubApp.getInstallationOctokit(
@@ -20,8 +21,8 @@ The channel name is \`${channel.name}\`. All the reviewers have been invited to 
   try {
     await octokit.rest.issues.createComment({
       owner: process.env.GITHUB_OWNER,
-      repo: process.env.GITHUB_REPO,
-      issue_number,
+      repo: pull.base.repo.name,
+      issue_number: pull.number,
       body: commentBody,
     });
 
@@ -41,12 +42,15 @@ export const addComment = async (
     parseInt(process.env.GITHUB_INSTALLATION_ID)
   );
 
-  const pull_number = parseInt(command.channel_name.split('-')[1])
+  const splitName = command.channel_name.split('-');
+  const repoName = splitName.slice(2).join('-')
+
+  const pull_number = parseInt(splitName[1])
 
   try {
     await octokit.rest.issues.createComment({
       owner: process.env.GITHUB_OWNER,
-      repo: process.env.GITHUB_REPO,
+      repo: repoName,
       issue_number: pull_number,
       body: command.text,
     });
