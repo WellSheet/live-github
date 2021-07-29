@@ -10,8 +10,6 @@ const repo = process.env.GITHUB_REPO;
 const owner = process.env.GITHUB_OWNER;
 const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
 
-console.log(gitUserToSlackId);
-
 const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
 import { Webhooks, createNodeMiddleware } from '@octokit/webhooks';
 const webhooks = new Webhooks({
@@ -159,16 +157,16 @@ const main = async () => {
   console.log(pullsWithoutChannel.map((pull) => pull.number));
 };
 
-const addReview = async () => {
+const addReview = async (issue_number: number) => {
   const octokit = await githubApp.getInstallationOctokit(
     parseInt(process.env.GITHUB_INSTALLATION_ID)
   );
 
   try {
-    await octokit.rest.pulls.createReviewComment({
+    await octokit.rest.issues.createComment({
       owner,
       repo,
-      pull_number: 4,
+      issue_number,
       body: `https://slack.com/app_redirect?channel=C02927N8F1V`,
     });
 
@@ -177,5 +175,3 @@ const addReview = async () => {
     console.log(error);
   }
 };
-
-// addReview();
