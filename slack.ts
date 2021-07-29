@@ -37,9 +37,19 @@ export const createPullChannel = async (
   });
 
   if (pull.body) {
+    const text = `
+PR Opened! [#${pull.number}](${pull.url})
+
+PR Title: \`${pull.title}\`
+PR Description:
+\`\`\`
+${pull.body}
+\`\`\`
+`;
+
     await slackApp.client.chat.postMessage({
       channel: newChannel.channel.id,
-      text: pull.body,
+      text,
     });
   }
 
