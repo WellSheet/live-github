@@ -56,7 +56,7 @@ const onChangePull = async (pull: PullRequest) => {
   const channels = await getSlackChannels(slackApp);
 
   let pullChannel = channels.find(
-    (channel) => channel.name === `pr-${pull.number}/${process.env.GITHUB_REPO}`
+    (channel) => channel.name === `pr-${pull.number}-${process.env.GITHUB_REPO}`
   );
 
   if (!pullChannel) {

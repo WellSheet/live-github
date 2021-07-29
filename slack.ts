@@ -30,7 +30,7 @@ export const createPullChannel = async (
   pull: PullRequest
 ): Promise<Channel> => {
   const newChannel = await slackApp.client.conversations.create({
-    name: `pr-${pull.number}/${process.env.GITHUB_REPO}`,
+    name: `pr-${pull.number}-${process.env.GITHUB_REPO}`,
   });
 
   // send the body as the first message
