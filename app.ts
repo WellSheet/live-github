@@ -73,6 +73,7 @@ const onChangePull = async (pull: PullRequest) => {
   if (pull.state === "open" && pullChannel.is_archived) {
     console.log(`Trying to unarchived PR#${pull.number}`);
 
+    await slackApp.client.conversations.join({ channel: pullChannel.id });
     await slackApp.client.conversations.unarchive({ channel: pullChannel.id });
     pullChannel.is_archived = false;
 
