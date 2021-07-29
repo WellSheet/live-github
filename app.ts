@@ -57,14 +57,14 @@ const onChangePull = async (pull: PullRequest) => {
   const channels = await getSlackChannels(slackApp);
 
   let pullChannel = channels.find(
-    (channel) => channel.name === `pr-${pull.number}-${process.env.GITHUB_REPO}`
+    (channel) => channel.name === `pr-${pull.number}-${pull.base.repo.name}`
   );
 
   if (!pullChannel) {
     console.log(`No channel for PR${pull.number}`);
     pullChannel = await createPullChannel(slackApp, pull);
 
-    await addInitialComment(githubApp, pull.number, pullChannel);
+    await addInitialComment(githubApp, pull, pullChannel);
   }
 
   if (!pullChannel.is_archived) {
