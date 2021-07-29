@@ -33,7 +33,7 @@ export const getPrChannels = (channels: Channel[]) => {
 
 export const slackTextFromPullRequest = (pull: PullRequest): string => {
 return `
-PR Opened! [#${pull.number}](${pull.url})
+PR Opened! <${pull.url}|#${pull.number}>
 
 PR Title: \`${pull.title}\`
 PR Description:
