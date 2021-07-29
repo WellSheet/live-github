@@ -93,6 +93,8 @@ const onChangePull = async (pull: PullRequest) => {
   }
 
   if (pull.state === "closed") {
+    console.log(`Channel ${pullChannel.name}: About to archive`);
+
     try {
       await slackApp.client.conversations.archive({ channel: pullChannel.id });
       console.log(`✅ Channel ${pullChannel.name}: Successfully archived`);
