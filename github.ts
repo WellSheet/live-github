@@ -43,13 +43,12 @@ export const addComment = async (
   const octokit = await githubApp.getInstallationOctokit(
     parseInt(process.env.GITHUB_INSTALLATION_ID)
   );
-  
-  const splitName = command.channel_name.split('-');
-  const repoName = splitName.slice(2).join('-')
 
-  const pull_number = parseInt(splitName[1])
-  const body =`*${command.user_name}* says:\n${command.text}`
+  const splitName = command.channel_name.split("-");
+  const repoName = splitName.slice(2).join("-");
 
+  const pull_number = parseInt(splitName[1]);
+  const body = `*${command.user_name}* says:\n${command.text}`;
 
   try {
     await octokit.rest.issues.createComment({
@@ -59,8 +58,10 @@ export const addComment = async (
       body,
     });
 
-    say(`${body}\n_Comment posted to Github_`)
-    console.log(`✅ Channel ${command.channel_name}: Successfully added a comment`);
+    say(`${body}\n_Comment posted to Github_`);
+    console.log(
+      `✅ Channel ${command.channel_name}: Successfully added a comment`
+    );
   } catch (error) {
     console.log(`❌ Channel ${command.channel_name}: Failed to add a comment`);
     console.log(error);
@@ -84,6 +85,8 @@ export const getApproveReview = async (
 
     console.log(reviewComments.data);
     console.log(`✅ PR#${pull_number}: Successfully fetched reviews`);
+    console.log(`✅ PR#${pull_number}: Successfully fetched reviews`);
+
     return reviewComments;
   } catch (error) {
     console.log(`❌ PR#${pull_number}: Failed to fetch reviews`);
