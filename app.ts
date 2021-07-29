@@ -161,3 +161,6 @@ const main = async () => {
   console.log(prChannelsNumber);
   console.log(pullsWithoutChannel.map((pull) => pull.number));
 };
+
+
+console.log('Completed all task, woohoo!!')
