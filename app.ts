@@ -11,7 +11,6 @@ const owner = process.env.GITHUB_OWNER;
 
 const MAX_SLACK_CHANNEL_LENGTH = 80;
 
-/// SETUP GITHUB WEBHOOKS
 const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
 import { Webhooks, createNodeMiddleware } from '@octokit/webhooks';
 const webhooks = new Webhooks({
@@ -34,9 +33,6 @@ const slackApp = new SlackApp({
 
 expressApp.use('api/github/webhooks', createNodeMiddleware(webhooks));
 expressApp.use('/', receiver.router);
-
-// require("http").createServer(createNodeMiddleware(webhooks)).listen(3000);
-/// END WEBHOOKS
 
 const githubApp = new GithubApp({
   appId: process.env.GITHUB_APP_ID,
