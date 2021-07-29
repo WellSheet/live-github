@@ -51,6 +51,7 @@ export const updateChannelTopic = async (
   const mergeStatusInTopic =
     channel.topic.value.split("<>")[0] === "✅ Approved " ? true : false;
 
+  console.log(`mergeStatusInTopic: ${mergeStatusInTopic}`);
   if (mergeStatusInTopic !== pull.mergeable) {
     const topic = `${pull.mergeable ? "❌ Not" : "✅"} Approved <> ${
       pull.title
