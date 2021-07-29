@@ -46,11 +46,16 @@ const onChangePull = async (pull) => {
 
   const channels = await getSlackChannels(slackApp);
 
+  console.log(channels.length);
+
   let pullChannel = channels.find(
     (channel) => channel.name === `pr-${pull.number}`
   );
 
+  console.log(pullChannel);
+
   if (!pullChannel) {
+    console.log(`No channel for PR${pull.number}`);
     pullChannel = await createPullChannel(slackApp, pull);
     await addComment(githubApp, pull.number, pullChannel);
   }
@@ -58,8 +63,9 @@ const onChangePull = async (pull) => {
   console.log(pullChannel);
 };
 
-webhooks.on("pull_request", ({ pull_request }: any) =>
-  onChangePull(pull_request)
+webhooks.on(
+  "pull_request",
+  async ({ pull_request }: any) => await onChangePull(pull_request)
 );
 
 const port = process.env.PORT || "3000";
