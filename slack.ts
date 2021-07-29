@@ -52,7 +52,7 @@ export const updateChannelTopic = async (
     channel.topic.value.split("<>")[0] === "✅ Approved " ? true : false;
 
   if (mergeStatusInTopic !== pull.mergeable) {
-    const topic = `${pull.mergeable ? "✅" : "❌ Not"} Approved <> ${
+    const topic = `${pull.mergeable ? "❌ Not" : "✅"} Approved <> ${
       pull.title
     }`;
 
@@ -90,7 +90,7 @@ export const createPullChannel = async (
       unfurl_links: false,
     });
 
-    const topic = `${pull.mergeable ? "✅" : "❌ Not"} Approved <> ${
+    const topic = `${pull.mergeable ? "❌ Not" : "✅"} Approved <> ${
       pull.title
     }`;
 
