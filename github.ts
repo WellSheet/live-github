@@ -10,12 +10,18 @@ export const addComment = async (
     parseInt(process.env.GITHUB_INSTALLATION_ID)
   );
 
+  const commentBody = `A Slack Channel was created for discussion of this PR :tada:
+
+The channel name is \`${channel.name}\`. All the reviewers have been invited to the channel, and it will be archived when the PR closes.
+
+[Click Here to open the channel](https://slack.com/app_redirect?channel=${channel.id})`;
+
   try {
     await octokit.rest.issues.createComment({
       owner: process.env.GITHUB_OWNER,
       repo: process.env.GITHUB_REPO,
       issue_number,
-      body: `https://slack.com/app_redirect?channel=${channel.id}`,
+      body: commentBody,
     });
 
     console.log("done adding comment to pr");
