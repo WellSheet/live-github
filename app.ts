@@ -31,9 +31,7 @@ const getPrChannelNumbers = (channels: Channel[]) =>
 const getSlackChannels = async () => {
   let allChannels: Channel[] = [];
 
-  const initChannels = await slackApp.client.conversations.list({
-    exclude_archived: true,
-  });
+  const initChannels = await slackApp.client.conversations.list();
 
   allChannels = initChannels.channels;
 
@@ -41,7 +39,6 @@ const getSlackChannels = async () => {
 
   while (nextCursor) {
     const moreChannels = await slackApp.client.conversations.list({
-      exclude_archived: true,
       cursor: nextCursor,
     });
 
@@ -77,8 +74,18 @@ const getPrChannels = (channels: Channel[]) => {
 
   //find channels to archive
   const toArchiveChannels = prChannels.filter((channel) => {
-    const channelNumber = parseInt(channel.name.slice(3));
-    return !openPrNumbers.includes(channelNumber) ? true : false;
+    const channelNumber = parseInt(channel.name.slice(3)),
+      hasOpenPull = openPrNumbers.includes(channelNumber);
+
+    return !hasOpenPull && !channel.is_archived ? true : false;
+  });
+
+  //archive channels with closed PRs
+  toArchiveChannels.forEach((channel) => {
+    slackApp.client.conversations
+      .archive({ channel: channel.id })
+      .then(() => console.log(`Successfully archived channel #${channel.name}`))
+      .catch(() => console.log(`Failed to archived channel #${channel.name}`));
   });
 
   //find PRs to open channels for
@@ -86,7 +93,21 @@ const getPrChannels = (channels: Channel[]) => {
     !prChannelsNumber.includes(pull.number) ? true : false
   );
 
+  //create channels for PRs
+  await pullsWithoutChannel.map(async (pull) => {
+    try {
+      const newChannel = await slackApp.client.conversations.create({ name: `pr-${pull.number}` });
+      await slackApp.client.chat.postMessage({
+        channel: newChannel.channel.id,
+        text: pull.body
+      })
+
+      console.log(`Successfully created channel for PR#${pull.number}`)
+    } catch (_) {
+      console.log(`Failed to create channel for PR#${pull.number}`)
+    }
+  });
+
   console.log(prChannelsNumber);
-  console.log(pullsWithoutChannel.map((pull) => pull));
-  console.log(toArchiveChannels);
+  console.log(pullsWithoutChannel.map((pull) => pull.number));
 })();
