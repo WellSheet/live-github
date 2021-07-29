@@ -24,8 +24,11 @@ The channel name is \`${channel.name}\`. All the reviewers have been invited to 
       body: commentBody,
     });
 
-    console.log("done adding comment to pr");
+    console.log(`✅ Channel ${channel.name}: Successfully added initial comment`);
   } catch (error) {
-    console.log(error);
+    console.log(
+      `❌ Channel ${channel.name}: Failed to added initial comment`
+    );
+    console.log(error)
   }
 };

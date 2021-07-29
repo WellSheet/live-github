@@ -70,20 +70,36 @@ const onChangePull = async (pull: PullRequest) => {
   if (!pullChannel.is_archived) {
     await addReviewersToChannel(slackApp, pull, pullChannel);
 
-    const me = (await slackApp.client.auth.test()).bot_id
-    const botCommentResponse = await slackApp.client.conversations.history({ channel: pullChannel.id, oldest: '0', limit: 5})
-    const botComment = botCommentResponse.messages.find(message => message.bot_id == me)
+    const me = (await slackApp.client.auth.test()).bot_id;
+    const botCommentResponse = await slackApp.client.conversations.history({
+      channel: pullChannel.id,
+      oldest: "0",
+      limit: 5,
+    });
+    const botComment = botCommentResponse.messages.find(
+      (message) => message.bot_id == me
+    );
 
     if (botComment) {
       const slackText = slackTextFromPullRequest(pull);
-      await slackApp.client.chat.update({ channel: pullChannel.id, ts: botComment.ts, text: slackText })
+      await slackApp.client.chat.update({
+        channel: pullChannel.id,
+        ts: botComment.ts,
+        text: slackText,
+      });
     } else {
-      console.error('Could not find our own comment')
+      console.error("Could not find our own comment");
     }
   }
 
   if (pull.state === "closed") {
-    await slackApp.client.conversations.archive({ channel: pullChannel.id });
+    try {
+      await slackApp.client.conversations.archive({ channel: pullChannel.id });
+      console.log(`✅ Channel ${pullChannel.name}: Successfully archived`);
+    } catch (error) {
+      console.log(`❌ Channel ${pullChannel.name}: Failed to archive`);
+      console.log(error);
+    }
   }
 };
 
@@ -91,13 +107,13 @@ webhooks.on("pull_request", async ({ payload }) => {
   await onChangePull(payload.pull_request);
 });
 
-slackApp.command('/add-pr-comment', async ({ command, ack, say }) => {
+slackApp.command("/add-pr-comment", async ({ command, ack, say }) => {
   await ack();
 
-  await say('hello there');
+  await say("hello there");
 });
 
 const port = process.env.PORT || "3000";
 expressApp.listen(parseInt(port));
 
-console.log("Completed all task, woohoo!!");
+console.log("✅ Completed all task, woohoo!!");
