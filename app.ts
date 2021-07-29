@@ -70,16 +70,6 @@ const onChangePull = async (pull: PullRequest) => {
     await addComment(githubApp, pull.number, pullChannel);
   }
 
-  if (pull.state === "open" && pullChannel.is_archived) {
-    console.log(`Trying to unarchived PR#${pull.number}`);
-
-    await slackApp.client.conversations.join({ channel: pullChannel.id });
-    await slackApp.client.conversations.unarchive({ channel: pullChannel.id });
-    pullChannel.is_archived = false;
-
-    console.log(`Unarchived PR#${pull.number}`);
-  }
-
   if (!pullChannel.is_archived) {
     console.log(
       pull.requested_reviewers.map((reviewer: User) => reviewer.login)
