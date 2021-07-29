@@ -12,6 +12,7 @@ import {
   createPullChannel,
   getSlackChannels,
   slackTextFromPullRequest,
+  updateChannelTopic,
 } from "./slack";
 import { addInitialComment, addComment, getApproveReview } from "./github";
 import { PullRequest } from "@octokit/webhooks-types";
@@ -54,8 +55,6 @@ const githubApp = new GithubApp({
 const onChangePull = async (pull: PullRequest) => {
   console.log("onChangePull() called");
 
-  await getApproveReview(githubApp, 15);
-
   const channels = await getSlackChannels(slackApp);
 
   let pullChannel = channels.find(
@@ -68,6 +67,8 @@ const onChangePull = async (pull: PullRequest) => {
 
     await addInitialComment(githubApp, pull.number, pullChannel);
   }
+
+  await updateChannelTopic(slackApp, pull, pullChannel);
 
   if (!pullChannel.is_archived) {
     await addReviewersToChannel(slackApp, pull, pullChannel);
@@ -119,6 +120,6 @@ slackApp.command("/add-pr-comment", async ({ command, ack, say }) => {
 const port = process.env.PORT || "3000";
 expressApp.listen(parseInt(port));
 
-getApproveReview(githubApp, 15);
+getApproveReview(githubApp, 22);
 
 console.log("✅ Completed all task, woohoo!!");

@@ -78,10 +78,10 @@ export const getApproveReview = async (
     const reviewComments = await octokit.rest.pulls.get({
       owner: process.env.GITHUB_OWNER,
       repo: process.env.GITHUB_REPO,
-      pull_number: 21,
+      pull_number,
     });
 
-    console.log(reviewComments.data)
+    console.log(reviewComments.data);
     console.log(`✅ PR#${pull_number}: Successfully fetched reviews`);
     return reviewComments;
   } catch (error) {
