@@ -8,8 +8,9 @@ dotenv.config({ path: "./.env.local" });
 
 const repo = process.env.GITHUB_REPO;
 const owner = process.env.GITHUB_OWNER;
+const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
 
-const MAX_SLACK_CHANNEL_LENGTH = 80;
+console.log(gitUserToSlackId);
 
 const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
 import { Webhooks, createNodeMiddleware } from '@octokit/webhooks';
@@ -38,14 +39,6 @@ const githubApp = new GithubApp({
   appId: process.env.GITHUB_APP_ID,
   privateKey: process.env.GITHUB_PRIVATE_KEY,
 });
-
-const GithubUserToEmail = Object.freeze({
-  ming1in: "ming@wellsheet.com",
-  gnaratil2017: "greg@wellsheet.com",
-});
-
-const getPrChannelNumbers = (channels: Channel[]) =>
-  channels.map((channel) => parseInt(channel.name.slice(3)));
 
 const getSlackChannels = async () => {
   let allChannels: Channel[] = [];
@@ -87,6 +80,15 @@ const getPrChannels = (channels: Channel[]) => {
   const pulls = await octokit.rest.pulls.list({ owner, repo });
   const prChannels = getPrChannels(allChannels); // filter to get only channels for PRs
 
+  const getReviewerUsernames = async (pull_number: number) => {
+    const response = await octokit.rest.pulls.listRequestedReviewers({
+      owner,
+      repo,
+      pull_number,
+    });
+    return response.data.users.map((user) => user.login);
+  };
+
   const openPrNumbers = pulls.data.map((pull) => pull.number);
   const prChannelsNumber = prChannels.map((channel) =>
     parseInt(channel.name.slice(3))
@@ -116,18 +118,65 @@ const getPrChannels = (channels: Channel[]) => {
   //create channels for PRs
   await pullsWithoutChannel.map(async (pull) => {
     try {
-      const newChannel = await slackApp.client.conversations.create({ name: `pr-${pull.number}` });
-      await slackApp.client.chat.postMessage({
-        channel: newChannel.channel.id,
-        text: pull.body
-      })
+      /*
+      const newChannel = await slackApp.client.conversations.create({
+        name: `pr-${pull.number}`,
+      });
 
-      console.log(`Successfully created channel for PR#${pull.number}`)
+      if(pull.body){
+        await slackApp.client.chat.postMessage({
+          channel: newChannel.channel.id,
+          text: pull.body,
+        })
+      }
+
+      //get github reviewers slack id
+      const reviewerUsernames = await getReviewerUsernames(pull.number);
+      const usersString = reviewerUsernames.map(reviewer => gitUserToSlackId[reviewer]).join(',')
+
+      slackApp.client.conversations.invite({
+        channel: newChannel.channel.id,
+        emails: [],
+        users: usersString,
+      });
+
+      // add slack link to github body
+      await octokit.rest.pulls.createReviewComment({
+        owner,
+        repo,
+        pull_number: pull.number,
+        body: `https://slack.com/app_redirect?channel=${newChannel.channel.id}`,
+      });
+
+      console.log(`Successfully created channel for PR#${pull.number}`);
+      */
     } catch (_) {
-      console.log(`Failed to create channel for PR#${pull.number}`)
+      console.log(`Failed to create channel for PR#${pull.number}`);
     }
   });
 
   console.log(prChannelsNumber);
   console.log(pullsWithoutChannel.map((pull) => pull.number));
-})();
+};
+
+const addReview = async () => {
+  const octokit = await githubApp.getInstallationOctokit(
+    parseInt(process.env.GITHUB_INSTALLATION_ID)
+  );
+
+  try {
+    await octokit.rest.pulls.createReviewComment({
+      owner,
+      repo,
+      pull_number: 4,
+      body: `https://slack.com/app_redirect?channel=C02927N8F1V`,
+    });
+
+    console.log("done adding comment to pr");
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+addReview();
+
