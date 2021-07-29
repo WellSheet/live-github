@@ -25,14 +25,8 @@ export const getSlackChannels = async (slackApp: SlackApp) => {
   return allChannels;
 };
 
-export const getPrChannels = (channels: Channel[]) => {
-  return channels.filter((channel) =>
-    channel.name.slice(0, 3) === "pr-" ? true : false
-  );
-};
-
 export const slackTextFromPullRequest = (pull: PullRequest): string => {
-return `
+  return `
 PR Opened! <${pull.html_url}|#${pull.number}>
 
 PR Title: \`${pull.title}\`
@@ -48,7 +42,7 @@ export const createPullChannel = async (
   pull: PullRequest
 ): Promise<Channel> => {
   const newChannel = await slackApp.client.conversations.create({
-    name: `pr-${pull.number}`,
+    name: `pr-${pull.number}/${process.env.GITHUB_REPO}`,
   });
 
   // send the body as the first message

@@ -4,7 +4,6 @@ import {
   ExpressReceiver as SlackExpressReceiver,
 } from "@slack/bolt";
 import dotenv from "dotenv";
-import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
 import express from "express";
 import Raven from "raven";
 import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
@@ -15,13 +14,9 @@ import {
   slackTextFromPullRequest,
 } from "./slack";
 import { addComment } from "./github";
-import { PullRequest, User } from "@octokit/webhooks-types";
+import { PullRequest } from "@octokit/webhooks-types";
 
 dotenv.config({ path: "./.env.local" });
-
-const repo = process.env.GITHUB_REPO;
-const owner = process.env.GITHUB_OWNER;
-const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
 
 const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
 
@@ -61,13 +56,9 @@ const onChangePull = async (pull: PullRequest) => {
 
   const channels = await getSlackChannels(slackApp);
 
-  console.log(channels.length);
-
   let pullChannel = channels.find(
-    (channel) => channel.name === `pr-${pull.number}`
+    (channel) => channel.name === `pr-${pull.number}/${process.env.GITHUB_REPO}`
   );
-
-  console.log(pullChannel);
 
   if (!pullChannel) {
     console.log(`No channel for PR${pull.number}`);
