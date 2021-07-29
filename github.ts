@@ -41,21 +41,23 @@ export const addComment = async (
   const octokit = await githubApp.getInstallationOctokit(
     parseInt(process.env.GITHUB_INSTALLATION_ID)
   );
-
+  
   const splitName = command.channel_name.split('-');
   const repoName = splitName.slice(2).join('-')
 
   const pull_number = parseInt(splitName[1])
+  const body =`*${command.user_name}* says:\n${command.text}`
+
 
   try {
     await octokit.rest.issues.createComment({
       owner: process.env.GITHUB_OWNER,
       repo: repoName,
       issue_number: pull_number,
-      body: command.text,
+      body,
     });
 
-    say('Your PR comment has been posted :tada:')
+    say(`${body}\n_Comment posted to Github_`)
     console.log(`✅ Channel ${command.channel_name}: Successfully added a comment`);
   } catch (error) {
     console.log(`❌ Channel ${command.channel_name}: Failed to add a comment`);
