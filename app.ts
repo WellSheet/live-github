@@ -85,7 +85,9 @@ const onChangePull = async (pull: PullRequest) => {
     users: reviewersString,
   });
 
-  console.log(pullChannel);
+  if (pull.state === "closed") {
+    await slackApp.client.conversations.archive({ channel: pullChannel.id });
+  }
 };
 
 webhooks.on("pull_request", async ({ payload }) => {
