@@ -2,29 +2,33 @@ import { PullRequest, User } from "@octokit/webhooks-types";
 import { App as SlackApp } from "@slack/bolt";
 import dotenv from "dotenv";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
+import { Message } from "@slack/web-api/dist/response/ConversationsHistoryResponse";
 
 dotenv.config({ path: "./.env.local" });
 
 const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
 
+const paginate = async <T>(slackApp: SlackApp, initialQuery: any, extractElements: (query: any) => T[]): Promise<T[]> => {
+  let collection = extractElements(initialQuery);
+
+  let nextCursor = initialQuery.response_metadata.next_cursor;
+  while (nextCursor) {
+    const moreElements = await slackApp.client.conversations.list({
+      cursor: nextCursor,
+    });
+
+    collection = [...collection, ...extractElements(moreElements)];
+    nextCursor = moreElements.response_metadata.next_cursor;
+  }
+
+  return collection;
+}
+
 export const getSlackChannels = async (slackApp: SlackApp) => {
   try {
-    let allChannels: Channel[] = [];
 
     const initChannels = await slackApp.client.conversations.list();
-
-    allChannels = initChannels.channels;
-
-    let nextCursor = initChannels.response_metadata.next_cursor;
-
-    while (nextCursor) {
-      const moreChannels = await slackApp.client.conversations.list({
-        cursor: nextCursor,
-      });
-
-      allChannels = [...allChannels, ...moreChannels.channels];
-      nextCursor = moreChannels.response_metadata.next_cursor;
-    }
+    const allChannels: Channel[] = await paginate(slackApp, initChannels, x => x.channels);
 
     console.log("✅ Success - fetched all channels");
     return allChannels;
@@ -33,6 +37,15 @@ export const getSlackChannels = async (slackApp: SlackApp) => {
     console.log(error);
   }
 };
+
+export const getChannelHistory = async (slackApp: SlackApp, channel: Channel): Promise<Message[]> => {
+    const botCommentResponse = await slackApp.client.conversations.history({
+      channel: channel.id,
+      oldest: "0",
+    });
+
+    return await paginate(slackApp, botCommentResponse, x => x.messages);
+}
 
 export const slackTextFromPullRequest = (pull: PullRequest): string => {
   return `
@@ -82,21 +95,10 @@ const getAllMembers = async (
   channel: Channel
 ) => {
   try {
-    let allMembers: string[] = [];
     const members = await slackApp.client.conversations.members({
       channel: channel.id,
     });
-
-    let nextCursor = members.response_metadata.next_cursor;
-    while (nextCursor) {
-      const moreMembers = await slackApp.client.conversations.members({
-        channel: channel.id,
-        cursor: nextCursor,
-      });
-
-      allMembers = [...allMembers, ...moreMembers.members];
-      nextCursor = moreMembers.response_metadata.next_cursor;
-    }
+    const allMembers: string[] = await paginate(slackApp, members, x => x.members);
 
     console.log(`✅ PR#${pull.number}: Successfully fetched all slack members`);
     return allMembers;

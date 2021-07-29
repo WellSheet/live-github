@@ -74,9 +74,8 @@ const onChangePull = async (pull: PullRequest) => {
     const botCommentResponse = await slackApp.client.conversations.history({
       channel: pullChannel.id,
       oldest: "0",
-      limit: 5,
     });
-    const botComment = botCommentResponse.messages.find(
+    const botComment: Message = botCommentResponse.messages.filter(
       (message) => message.bot_id == me
     );
 
