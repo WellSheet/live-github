@@ -2,6 +2,7 @@ import { App as GithubApp } from "octokit";
 import { App as SlackApp } from "@slack/bolt";
 import dotenv from "dotenv";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
+import express from "express";
 
 dotenv.config({ path: "./.env.local" });
 
@@ -139,31 +140,24 @@ const main = async () => {
   console.log(pullsWithoutChannel.map((pull) => pull.number));
 };
 
-const mapGithubUserToSlackId = async () => {
-  const gitUserToSlackEmail = JSON.parse(process.env.GIT_USER_TO_SLACK_EMAIL);
+const addReview = async () => {
+  const octokit = await githubApp.getInstallationOctokit(
+    parseInt(process.env.GITHUB_INSTALLATION_ID)
+  );
 
-  const allSlackUsers = await slackApp.client.users.list();
+  try {
+    await octokit.rest.pulls.createReviewComment({
+      owner,
+      repo,
+      pull_number: 4,
+      body: `https://slack.com/app_redirect?channel=C02927N8F1V`,
+    });
 
-  const emailToSlackIdMap = {};
-
-  allSlackUsers.members.forEach((member) => {
-    emailToSlackIdMap[member.profile.email] = member.id;
-  });
-
-  const gitUserToSlackId = Object.keys(gitUserToSlackEmail).map((gitUser) => {
-    const email = gitUserToSlackEmail[gitUser];
-
-    const slackId = emailToSlackIdMap[email];
-
-    return { gitUser, slackId };
-  });
-
-  console.log(gitUserToSlackId);
+    console.log("done adding comment to pr");
+  } catch (error) {
+    console.log(error);
+  }
 };
 
-slackApp.command("/add_pr_comment", async ({ command, ack, say }) => {
-  // Acknowledge command request
-  await ack();
+addReview();
 
-  await say("hello");
-});
