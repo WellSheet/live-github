@@ -51,8 +51,6 @@ const githubApp = new GithubApp({
 });
 
 const onChangePull = async (pull: PullRequest) => {
-  console.log("onChangePull() called");
-
   const channels = await getSlackChannels(slackApp);
 
   let pullChannel = channels.find(
@@ -60,9 +58,7 @@ const onChangePull = async (pull: PullRequest) => {
   );
 
   if (!pullChannel) {
-    console.log(`No channel for PR${pull.number}`);
     pullChannel = await createPullChannel(slackApp, pull);
-
     await addComment(githubApp, pull.number, pullChannel);
   }
 
