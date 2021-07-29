@@ -2,7 +2,7 @@ import { App as GithubApp } from "octokit";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
 import { SlashCommand } from "@slack/bolt";
 
-export const addSlackLinkComment = async (
+export const addInitialComment = async (
   githubApp: GithubApp,
   issue_number: number,
   channel: Channel
@@ -25,9 +25,10 @@ The channel name is \`${channel.name}\`. All the reviewers have been invited to 
       body: commentBody,
     });
 
-    console.log("done adding slack link comment to pr");
+    console.log(`✅ Channel ${channel.name}: Successfully added initial comment`);
   } catch (error) {
-    console.log(error);
+    console.log(`❌ Channel ${channel.name}: Failed to add initial comment`);
+    console.log(error)
   }
 };
 
@@ -49,9 +50,10 @@ export const addComment = async (
       body: command.text,
     });
 
-    console.log("done adding comment to pr");
+    console.log(`✅ Channel ${command.channel_name}: Successfully added a comment`);
   } catch (error) {
-    console.log(error);
+    console.log(`❌ Channel ${command.channel_name}: Failed to add a comment`);
+    console.log(error)
   }
 };
 
