@@ -1,5 +1,8 @@
+import { PullRequest, User } from "@octokit/webhooks-types";
 import { App as SlackApp } from "@slack/bolt";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
+
+const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
 
 export const getSlackChannels = async (slackApp: SlackApp) => {
   let allChannels: Channel[] = [];
@@ -30,12 +33,13 @@ export const getPrChannels = (channels: Channel[]) => {
 
 export const createPullChannel = async (
   slackApp: SlackApp,
-  pull
+  pull: PullRequest
 ): Promise<Channel> => {
   const newChannel = await slackApp.client.conversations.create({
     name: `pr-${pull.number}`,
   });
 
+  // send the body as the first message
   if (pull.body) {
     const text = `
 PR Opened! [#${pull.number}](${pull.url})
@@ -53,5 +57,35 @@ ${pull.body}
     });
   }
 
+  // add a topic to the channel
+  await slackApp.client.conversations.setTopic({
+    channel: newChannel.channel.id,
+    topic: pull.title,
+  });
+
   return newChannel.channel;
+};
+
+export const addReviewersToChannel = async (
+  slackApp: SlackApp,
+  pull: PullRequest,
+  channel: Channel
+) => {
+  const reviewersString = pull.requested_reviewers
+    .map((reviewer: User) => {
+      return gitUserToSlackId[reviewer.login];
+    })
+    .concat(gitUserToSlackId[pull.assignee.login])
+    .join(",");
+
+  try {
+    await slackApp.client.conversations.invite({
+      channel: channel.id,
+      emails: [],
+      users: reviewersString,
+    });
+    console.log(`PR#${pull.number}: Successfully added ${reviewersString}`);
+  } catch (_) {
+    console.log(`PR#${pull.number}: Failed to add ${reviewersString}`);
+  }
 };

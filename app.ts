@@ -8,7 +8,11 @@ import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse"
 import express from "express";
 import Raven from "raven";
 import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
-import { createPullChannel, getSlackChannels } from "./slack";
+import {
+  addReviewersToChannel,
+  createPullChannel,
+  getSlackChannels,
+} from "./slack";
 import { addComment } from "./github";
 import { PullRequest, User } from "@octokit/webhooks-types";
 
@@ -67,28 +71,12 @@ const onChangePull = async (pull: PullRequest) => {
   if (!pullChannel) {
     console.log(`No channel for PR${pull.number}`);
     pullChannel = await createPullChannel(slackApp, pull);
+
     await addComment(githubApp, pull.number, pullChannel);
   }
 
-  if (!pullChannel.is_archived) {
-    console.log(
-      pull.requested_reviewers.map((reviewer: User) => reviewer.login)
-    );
-
-    const reviewersString = pull.requested_reviewers
-      .map((reviewer: User) => {
-        return gitUserToSlackId[reviewer.login];
-      })
-      .join(",");
-
-    console.log(reviewersString);
-
-    slackApp.client.conversations.invite({
-      channel: pullChannel.id,
-      emails: [],
-      users: reviewersString,
-    });
-  }
+  if (!pullChannel.is_archived)
+    await addReviewersToChannel(slackApp, pull, pullChannel);
 
   if (pull.state === "closed") {
     await slackApp.client.conversations.archive({ channel: pullChannel.id });
