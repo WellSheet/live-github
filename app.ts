@@ -82,12 +82,11 @@ const onChangePull = async (pull: PullRequest) => {
 
     if (botComment) {
       const slackText = slackTextFromPullRequest(pull);
-      console.log(botComment);
-      // await slackApp.client.chat.update({
-      //   channel: pullChannel.id,
-      //   ts: botComment.ts,
-      //   text: slackText,
-      // });
+      await slackApp.client.chat.update({
+        channel: pullChannel.id,
+        ts: botComment.ts,
+        text: slackText,
+      });
     } else {
       console.error("Could not find our own comment");
     }
