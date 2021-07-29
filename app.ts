@@ -13,7 +13,7 @@ import {
   getSlackChannels,
   slackTextFromPullRequest,
 } from "./slack";
-import { addInitialComment, addComment } from "./github";
+import { addInitialComment, addComment, getApproveReview } from "./github";
 import { PullRequest } from "@octokit/webhooks-types";
 
 dotenv.config({ path: "./.env.local" });
@@ -53,6 +53,8 @@ const githubApp = new GithubApp({
 
 const onChangePull = async (pull: PullRequest) => {
   console.log("onChangePull() called");
+
+  await getApproveReview(githubApp, 15);
 
   const channels = await getSlackChannels(slackApp);
 
@@ -116,5 +118,7 @@ slackApp.command("/add-pr-comment", async ({ command, ack, say }) => {
 
 const port = process.env.PORT || "3000";
 expressApp.listen(parseInt(port));
+
+getApproveReview(githubApp, 15);
 
 console.log("✅ Completed all task, woohoo!!");

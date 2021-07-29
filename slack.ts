@@ -2,6 +2,9 @@ import { PullRequest, User } from "@octokit/webhooks-types";
 import { App as SlackApp } from "@slack/bolt";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
 
+import dotenv from "dotenv";
+dotenv.config({ path: "./.env.local" });
+
 const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
 
 export const getSlackChannels = async (slackApp: SlackApp) => {
