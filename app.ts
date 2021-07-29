@@ -61,6 +61,26 @@ const onChangePull = async (pull: PullRequest) => {
     await addComment(githubApp, pull.number, pullChannel);
   }
 
+  pull.requested_reviewers.forEach((reviewer) => {});
+
+  console.log(
+    pull.requested_reviewers.map((reviewer) => gitUserToSlackId[reviewer.name])
+  );
+
+  const reviewersString = pull.requested_reviewers
+    .map((reviewer) => {
+      return gitUserToSlackId[reviewer.name];
+    })
+    .join(",");
+
+  console.log(reviewersString);
+
+  slackApp.client.conversations.invite({
+    channel: pullChannel.id,
+    emails: [],
+    users: reviewersString,
+  });
+
   console.log(pullChannel);
 };
 
@@ -160,5 +180,4 @@ const main = async () => {
   console.log(pullsWithoutChannel.map((pull) => pull.number));
 };
 
-
-console.log('Completed all task, woohoo!!')
+console.log("Completed all task, woohoo!!");
