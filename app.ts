@@ -69,6 +69,27 @@ const onChangePull = async (pull: PullRequest) => {
 
   if (!pullChannel.is_archived) {
     await addReviewersToChannel(slackApp, pull, pullChannel);
+
+    const me = (await slackApp.client.auth.test()).bot_id;
+    const botCommentResponse = await slackApp.client.conversations.history({
+      channel: pullChannel.id,
+      oldest: "0",
+      limit: 5,
+    });
+    const botComment = botCommentResponse.messages.find(
+      (message) => message.bot_id == me
+    );
+
+    if (botComment) {
+      const slackText = slackTextFromPullRequest(pull);
+      await slackApp.client.chat.update({
+        channel: pullChannel.id,
+        ts: botComment.ts,
+        text: slackText,
+      });
+    } else {
+      console.error("Could not find our own comment");
+    }
   }
 
   if (pull.state === "closed") {
@@ -80,20 +101,6 @@ const onChangePull = async (pull: PullRequest) => {
       console.log(error);
     }
   }
-
-  const botCommentResponse = await slackApp.client.conversations.history({
-    channel: pullChannel.id,
-    oldest: "0",
-    limit: 1,
-  });
-  const botComment = botCommentResponse.messages[0];
-
-  const slackText = slackTextFromPullRequest(pull);
-  await slackApp.client.chat.update({
-    channel: pullChannel.id,
-    ts: botComment.ts,
-    text: slackText,
-  });
 };
 
 webhooks.on("pull_request", async ({ payload }) => {
@@ -108,9 +115,5 @@ slackApp.command("/add-pr-comment", async ({ command, ack, say }) => {
 
 const port = process.env.PORT || "3000";
 expressApp.listen(parseInt(port));
-
-expressApp.post("/", (req, res) => {
-  console.log("received slack command");
-});
 
 console.log("✅ Completed all task, woohoo!!");
