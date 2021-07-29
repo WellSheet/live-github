@@ -56,7 +56,7 @@ export const createPullChannel = async (
     await slackApp.client.chat.postMessage({
       channel: newChannel.channel.id,
       text,
-        unfurl_links: false,
+      unfurl_links: false,
     });
 
     // add a topic to the channel
