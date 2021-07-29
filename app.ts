@@ -112,8 +112,7 @@ webhooks.on("pull_request", async ({ payload }) => {
 
 slackApp.command("/add-pr-comment", async ({ command, ack, say }) => {
   await ack();
-
-  await addComment(githubApp, command)
+  await addComment(githubApp, command, say);
 });
 
 const port = process.env.PORT || "3000";

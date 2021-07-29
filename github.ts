@@ -1,6 +1,6 @@
 import { App as GithubApp } from "octokit";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
-import { SlashCommand } from "@slack/bolt";
+import { SayFn, SlashCommand } from "@slack/bolt";
 
 export const addInitialComment = async (
   githubApp: GithubApp,
@@ -35,6 +35,7 @@ The channel name is \`${channel.name}\`. All the reviewers have been invited to 
 export const addComment = async (
   githubApp: GithubApp,
   command: SlashCommand,
+  say: SayFn,
 ) => {
   const octokit = await githubApp.getInstallationOctokit(
     parseInt(process.env.GITHUB_INSTALLATION_ID)
@@ -50,6 +51,7 @@ export const addComment = async (
       body: command.text,
     });
 
+    say('Your PR comment has been posted :tada:')
     console.log(`✅ Channel ${command.channel_name}: Successfully added a comment`);
   } catch (error) {
     console.log(`❌ Channel ${command.channel_name}: Failed to add a comment`);
