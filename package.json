@@ -5,7 +5,9 @@
   "main": "y",
   "repository": "live-github",
   "scripts": {
-    "serve": "nodemon app.ts"
+    "build": "tsc",
+    "serve": "nodemon app.ts",
+    "heroku-serve": "node ./dist/app.js"
   },
   "author": "wellsheet",
   "license": "MIT",

@@ -56,7 +56,8 @@ const getPrChannels = (channels: Channel[]) => {
 };
 
 (async () => {
-  await slackApp.start(process.env.PORT || 3000);
+  const port = process.env.PORT || '3000';
+  await slackApp.start(parseInt(port));
 
   const octokit = await githubApp.getInstallationOctokit(
     parseInt(process.env.GITHUB_INSTALLATION_ID)
