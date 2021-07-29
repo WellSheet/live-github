@@ -56,17 +56,14 @@ const githubApp = new GithubApp({
 });
 
 const onChangePull = async (pull: PullRequest) => {
-  console.log("onChangePull() called");
 
   const channels = await getSlackChannels(slackApp);
 
-  console.log(channels.length);
 
   let pullChannel = channels.find(
     (channel) => channel.name === `pr-${pull.number}`
   );
 
-  console.log(pullChannel);
 
   if (!pullChannel) {
     console.log(`No channel for PR${pull.number}`);
