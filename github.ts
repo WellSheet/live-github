@@ -51,7 +51,7 @@ export const addComment = async (
       body: command.text,
     });
 
-    say('Your PR comment has been posted :tada:')
+    say(`${command.user_name}'s comment (also posted to Github): ${command.text}`)
     console.log(`✅ Channel ${command.channel_name}: Successfully added a comment`);
   } catch (error) {
     console.log(`❌ Channel ${command.channel_name}: Failed to add a comment`);
