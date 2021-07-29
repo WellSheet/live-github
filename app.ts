@@ -78,9 +78,8 @@ const onChangePull = async (pull: PullRequest) => {
   if (!pullChannel.is_archived)
     await addReviewersToChannel(slackApp, pull, pullChannel);
 
-  if (pull.state === "closed") {
+  if (pull.state === "closed")
     await slackApp.client.conversations.archive({ channel: pullChannel.id });
-  }
 };
 
 webhooks.on("pull_request", async ({ payload }) => {
