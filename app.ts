@@ -99,6 +99,12 @@ webhooks.on("pull_request", async ({ payload }) => {
   await onChangePull(payload.pull_request);
 });
 
+slackApp.command('/add-pr-comment', async ({ command, ack, say }) => {
+  await ack();
+
+  await say('hello there');
+});
+
 const port = process.env.PORT || "3000";
 expressApp.listen(parseInt(port));
 
