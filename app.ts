@@ -152,4 +152,15 @@ const onChangePull = async (pull) => {
   console.log(pullChannel);
 };
 
+
+
+
+
+
+
+
+
+
+
+
 webhooks.on("pull_request", ({ pull_request }: any) => onChangePull(pull_request));
