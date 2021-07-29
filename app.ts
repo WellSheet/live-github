@@ -95,4 +95,8 @@ slackApp.command('/add-pr-comment', async ({ command, ack, say }) => {
 const port = process.env.PORT || "3000";
 expressApp.listen(parseInt(port));
 
+expressApp.post('/', (req, res) => {
+  console.log('received slack command')
+})
+
 console.log("Completed all task, woohoo!!");
