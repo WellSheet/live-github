@@ -31,7 +31,7 @@ const slackApp = new SlackApp({
   receiver,
 });
 
-expressApp.use('api/github/webhooks', createNodeMiddleware(webhooks));
+expressApp.use('/', createNodeMiddleware(webhooks));
 expressApp.use('/', receiver.router);
 
 const githubApp = new GithubApp({
