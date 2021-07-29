@@ -1,8 +1,8 @@
 import { App as GithubApp } from "octokit";
-import { App as SlackApp } from "@slack/bolt";
+import { App as SlackApp, ExpressReceiver as SlackExpressReceiver } from "@slack/bolt";
 import dotenv from "dotenv";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
-import express from "express";
+import express from 'express';
 
 dotenv.config({ path: "./.env.local" });
 
@@ -12,14 +12,32 @@ const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
 
 console.log(gitUserToSlackId);
 
-const githubApp = new GithubApp({
-  appId: process.env.GITHUB_APP_ID,
-  privateKey: process.env.GITHUB_PRIVATE_KEY,
+const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+import { Webhooks, createNodeMiddleware } from '@octokit/webhooks';
+const webhooks = new Webhooks({
+  secret: githubWebhookSecret,
 });
+
+webhooks.onAny(({ id, name, payload }) => {
+  console.log(id, name, "event received");
+});
+
+const expressApp = express();
+
+const receiver = new SlackExpressReceiver({ signingSecret: process.env.SLACK_SIGNING_SECRET });
 
 const slackApp = new SlackApp({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
+  receiver,
+});
+
+expressApp.use('/', createNodeMiddleware(webhooks));
+expressApp.use('/', receiver.router);
+
+const githubApp = new GithubApp({
+  appId: process.env.GITHUB_APP_ID,
+  privateKey: process.env.GITHUB_PRIVATE_KEY,
 });
 
 const getSlackChannels = async () => {
@@ -49,8 +67,9 @@ const getPrChannels = (channels: Channel[]) => {
   );
 };
 
-const main = async () => {
-  await slackApp.start(3000);
+(async () => {
+  const port = process.env.PORT || '3000';
+  expressApp.listen(parseInt(port));
 
   const octokit = await githubApp.getInstallationOctokit(
     parseInt(process.env.GITHUB_INSTALLATION_ID)
