@@ -120,6 +120,4 @@ slackApp.command("/add-pr-comment", async ({ command, ack, say }) => {
 const port = process.env.PORT || "3000";
 expressApp.listen(parseInt(port));
 
-getApproveReview(githubApp, 22);
-
 console.log("✅ Completed all task, woohoo!!");
