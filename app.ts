@@ -13,7 +13,7 @@ import {
   getSlackChannels,
   slackTextFromPullRequest,
 } from "./slack";
-import { addComment } from "./github";
+import { addInitialComment, addComment } from "./github";
 import { PullRequest } from "@octokit/webhooks-types";
 
 dotenv.config({ path: "./.env.local" });
@@ -64,7 +64,7 @@ const onChangePull = async (pull: PullRequest) => {
     console.log(`No channel for PR${pull.number}`);
     pullChannel = await createPullChannel(slackApp, pull);
 
-    await addComment(githubApp, pull.number, pullChannel);
+    await addInitialComment(githubApp, pull.number, pullChannel);
   }
 
   if (!pullChannel.is_archived) {
@@ -112,7 +112,7 @@ webhooks.on("pull_request", async ({ payload }) => {
 slackApp.command("/add-pr-comment", async ({ command, ack, say }) => {
   await ack();
 
-  await say("hello there");
+  await addComment(githubApp, command)
 });
 
 const port = process.env.PORT || "3000";
