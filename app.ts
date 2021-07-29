@@ -63,10 +63,11 @@ const onChangePull = async (pull) => {
   console.log(pullChannel);
 };
 
-webhooks.on(
-  "pull_request",
-  async ({ pull_request }: any) => await onChangePull(pull_request)
-);
+webhooks.on("pull_request", async (data) => {
+  console.log(data);
+
+  // await onChangePull(pull_request)
+});
 
 const port = process.env.PORT || "3000";
 expressApp.listen(parseInt(port));
