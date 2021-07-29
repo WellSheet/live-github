@@ -1,9 +1,6 @@
 import { PullRequest, User } from "@octokit/webhooks-types";
 import { App as SlackApp } from "@slack/bolt";
-import dotenv from "dotenv";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
-
-dotenv.config({ path: "./.env.local" });
 
 const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
 
@@ -46,6 +43,37 @@ ${pull.body}
 `;
 };
 
+export const updateChannelTopic = async (
+  slackApp: SlackApp,
+  pull: PullRequest,
+  channel: Channel
+) => {
+  const mergeStatusInTopic =
+    channel.topic.value.split("<>")[0] === "✅ Approved " ? true : false;
+
+  if (mergeStatusInTopic !== pull.mergeable) {
+    const topic = `${pull.mergeable ? "✅" : "❌ Not"} Approved <> ${
+      pull.title
+    }`;
+
+    try {
+      await slackApp.client.conversations.setTopic({
+        channel: channel.id,
+        topic,
+      });
+
+      console.log(
+        `✅ Channel ${channel.name}: Successfully updated the mergeable status in topic`
+      );
+    } catch (error) {
+      console.log(
+        `❌ Channel ${channel.name}: Failed to update the mergeable status in topic`
+      );
+      console.log(error);
+    }
+  }
+};
+
 export const createPullChannel = async (
   slackApp: SlackApp,
   pull: PullRequest
@@ -62,10 +90,14 @@ export const createPullChannel = async (
       unfurl_links: false,
     });
 
+    const topic = `${pull.mergeable ? "✅" : "❌ Not"} Approved <> ${
+      pull.title
+    }`;
+
     // add a topic to the channel
     await slackApp.client.conversations.setTopic({
       channel: newChannel.channel.id,
-      topic: pull.title,
+      topic,
     });
 
     console.log(`✅ PR#${pull.number}: Successfully created channel`);
