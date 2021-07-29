@@ -17,6 +17,7 @@ const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
 import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
 import { createPullChannel, getPrChannels, getSlackChannels } from "./slack";
 import { addComment } from "./github";
+import { PullRequest } from "@octokit/webhooks-types";
 const webhooks = new Webhooks({
   secret: githubWebhookSecret,
 });
@@ -41,7 +42,7 @@ const githubApp = new GithubApp({
   privateKey: process.env.GITHUB_PRIVATE_KEY,
 });
 
-const onChangePull = async (pull) => {
+const onChangePull = async (pull: PullRequest) => {
   console.log("onChangePull() called");
 
   const channels = await getSlackChannels(slackApp);
@@ -63,10 +64,8 @@ const onChangePull = async (pull) => {
   console.log(pullChannel);
 };
 
-webhooks.on("pull_request", async (data) => {
-  console.log(data);
-
-  // await onChangePull(pull_request)
+webhooks.on("pull_request", async ({ payload }) => {
+  await onChangePull(payload.pull_request);
 });
 
 const port = process.env.PORT || "3000";
