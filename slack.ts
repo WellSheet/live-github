@@ -52,15 +52,11 @@ export const createPullChannel = async (
       name: `pr-${pull.number}-${process.env.GITHUB_REPO}`,
     });
 
-    // send the body as the first message
-    if (pull.body) {
-      const text = slackTextFromPullRequest(pull);
-
-      await slackApp.client.chat.postMessage({
-        channel: newChannel.channel.id,
-        text,
-      });
-    }
+    const text = slackTextFromPullRequest(pull);
+    await slackApp.client.chat.postMessage({
+      channel: newChannel.channel.id,
+      text,
+    });
 
     // add a topic to the channel
     await slackApp.client.conversations.setTopic({
@@ -81,22 +77,46 @@ export const addReviewersToChannel = async (
   pull: PullRequest,
   channel: Channel
 ) => {
-  const reviewersString = pull.requested_reviewers
-    .map((reviewer: User) => {
-      return gitUserToSlackId[reviewer.login];
-    })
-    .concat(gitUserToSlackId[pull.user.login])
-    .join(",");
-
   try {
-    await slackApp.client.conversations.invite({
+    let allMembers: string[] = [];
+    const members = await slackApp.client.conversations.members({
       channel: channel.id,
-      emails: [],
-      users: reviewersString,
     });
+
+    let nextCursor = members.response_metadata.next_cursor;
+    while (nextCursor) {
+      const moreMembers = await slackApp.client.conversations.members({
+        channel: channel.id,
+        cursor: nextCursor,
+      });
+
+      allMembers = [...allMembers, ...moreMembers.members];
+      nextCursor = moreMembers.response_metadata.next_cursor;
+    }
+
+    const reviewers = pull.requested_reviewers
+      .map((reviewer: User) => gitUserToSlackId[reviewer.login])
+      .concat(gitUserToSlackId[pull.user.login]);
+
+    const reviewerToInvite = reviewers.some(
+      (reviewer) => !allMembers.includes(reviewer)
+    );
+
+    const reviewersString = reviewers.join(",");
+
+    if (reviewerToInvite) {
+      await slackApp.client.conversations.invite({
+        channel: channel.id,
+        emails: [],
+        users: reviewersString,
+      });
+    }
+
     console.log(`✅ PR#${pull.number}: Successfully added ${reviewersString}`);
   } catch (error) {
-    console.log(`❌ PR#${pull.number}: Failed to add ${reviewersString}`);
+    console.log(
+      `❌ PR#${pull.number}: Failed to add requested reviewers to slack channel`
+    );
     console.log(error);
   }
 };
