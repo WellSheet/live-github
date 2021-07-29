@@ -52,15 +52,11 @@ export const createPullChannel = async (
       name: `pr-${pull.number}-${process.env.GITHUB_REPO}`,
     });
 
-    // send the body as the first message
-    if (pull.body) {
-      const text = slackTextFromPullRequest(pull);
-
-      await slackApp.client.chat.postMessage({
-        channel: newChannel.channel.id,
-        text,
-      });
-    }
+    const text = slackTextFromPullRequest(pull);
+    await slackApp.client.chat.postMessage({
+      channel: newChannel.channel.id,
+      text,
+    });
 
     // add a topic to the channel
     await slackApp.client.conversations.setTopic({
