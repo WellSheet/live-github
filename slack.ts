@@ -52,6 +52,7 @@ export const createPullChannel = async (
     await slackApp.client.chat.postMessage({
       channel: newChannel.channel.id,
       text,
+      unfurl_links: false,
     });
   }
 
