@@ -21,10 +21,6 @@ const webhooks = new Webhooks({
   secret: githubWebhookSecret,
 });
 
-webhooks.onAny(({ id, name, payload }) => {
-  console.log(id, name, "event received");
-});
-
 const expressApp = express();
 
 const receiver = new SlackExpressReceiver({
@@ -44,6 +40,27 @@ const githubApp = new GithubApp({
   appId: process.env.GITHUB_APP_ID,
   privateKey: process.env.GITHUB_PRIVATE_KEY,
 });
+
+const onChangePull = async (pull) => {
+  console.log("onChangePull() called");
+
+  const channels = await getSlackChannels(slackApp);
+
+  let pullChannel = channels.find(
+    (channel) => channel.name === `pr-${pull.number}`
+  );
+
+  if (!pullChannel) {
+    pullChannel = await createPullChannel(slackApp, pull);
+    await addComment(githubApp, pull.number, pullChannel);
+  }
+
+  console.log(pullChannel);
+};
+
+webhooks.on("pull_request", ({ pull_request }: any) =>
+  onChangePull(pull_request)
+);
 
 const port = process.env.PORT || "3000";
 expressApp.listen(parseInt(port));
@@ -136,20 +153,3 @@ const main = async () => {
   console.log(prChannelsNumber);
   console.log(pullsWithoutChannel.map((pull) => pull.number));
 };
-
-const onChangePull = async (pull) => {
-  const channels = await getSlackChannels(slackApp);
-
-  let pullChannel = channels.find(
-    (channel) => channel.name === `pr-${pull.number}`
-  );
-
-  if (!pullChannel) {
-    pullChannel = await createPullChannel(slackApp, pull);
-    await addComment(githubApp, pull.number, pullChannel);
-  }
-
-  console.log(pullChannel);
-};
-
-webhooks.on("pull_request", ({ pull_request }: any) => onChangePull(pull_request));
