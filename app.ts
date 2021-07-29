@@ -5,8 +5,8 @@ import {
 } from "@slack/bolt";
 import dotenv from "dotenv";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
-import express from 'express';
-import Raven from 'raven';
+import express from "express";
+import Raven from "raven";
 
 dotenv.config({ path: "./.env.local" });
 
@@ -18,7 +18,7 @@ const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
 import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
 import { createPullChannel, getPrChannels, getSlackChannels } from "./slack";
 import { addComment } from "./github";
-import { PullRequest } from "@octokit/webhooks-types";
+import { PullRequest, User } from "@octokit/webhooks-types";
 const webhooks = new Webhooks({
   secret: githubWebhookSecret,
 });
@@ -69,15 +69,11 @@ const onChangePull = async (pull: PullRequest) => {
     await addComment(githubApp, pull.number, pullChannel);
   }
 
-  pull.requested_reviewers.forEach((reviewer) => {});
-
-  console.log(
-    pull.requested_reviewers.map((reviewer) => gitUserToSlackId[reviewer.name])
-  );
+  console.log(pull.requested_reviewers.map((reviewer: User) => reviewer.login));
 
   const reviewersString = pull.requested_reviewers
-    .map((reviewer) => {
-      return gitUserToSlackId[reviewer.name];
+    .map((reviewer: User) => {
+      return gitUserToSlackId[reviewer.login];
     })
     .join(",");
 
@@ -188,5 +184,4 @@ const main = async () => {
   console.log(pullsWithoutChannel.map((pull) => pull.number));
 };
 
-
-console.log('Completed all task, woohoo!!')
+console.log("Completed all task, woohoo!!");
