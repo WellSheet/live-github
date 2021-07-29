@@ -69,17 +69,22 @@ const onChangePull = async (pull: PullRequest) => {
 
   if (!pullChannel.is_archived) {
     await addReviewersToChannel(slackApp, pull, pullChannel);
+
+    const me = (await slackApp.client.auth.test()).bot_id
+    const botCommentResponse = await slackApp.client.conversations.history({ channel: pullChannel.id, oldest: '0', limit: 5})
+    const botComment = botCommentResponse.messages.find(message => message.bot_id == me)
+
+    if (botComment) {
+      const slackText = slackTextFromPullRequest(pull);
+      await slackApp.client.chat.update({ channel: pullChannel.id, ts: botComment.ts, text: slackText })
+    } else {
+      console.error('Could not find our own comment')
+    }
   }
 
   if (pull.state === "closed") {
     await slackApp.client.conversations.archive({ channel: pullChannel.id });
   }
-
-  const botCommentResponse = await slackApp.client.conversations.history({ channel: pullChannel.id, oldest: '0', limit: 1})
-  const botComment = botCommentResponse.messages[0]
-
-  const slackText = slackTextFromPullRequest(pull);
-  await slackApp.client.chat.update({ channel: pullChannel.id, ts: botComment.ts, text: slackText })
 };
 
 webhooks.on("pull_request", async ({ payload }) => {
