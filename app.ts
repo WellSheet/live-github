@@ -5,7 +5,8 @@ import {
 } from "@slack/bolt";
 import dotenv from "dotenv";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
-import express from "express";
+import express from 'express';
+import Raven from 'raven';
 
 dotenv.config({ path: "./.env.local" });
 
@@ -23,6 +24,13 @@ const webhooks = new Webhooks({
 });
 
 const expressApp = express();
+
+if (process.env.SENTRY_DSN) {
+  Raven.config(process.env.SENTRY_DSN).install();
+
+  expressApp.use(Raven.requestHandler());
+  expressApp.use(Raven.errorHandler());
+}
 
 const receiver = new SlackExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
