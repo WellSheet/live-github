@@ -72,14 +72,12 @@ export const updateChannelTopic = async (
   channel: Channel
 ) => {
   const mergeStatusInTopic =
-    channel.topic.value.split(" ")[0] === ":x:" ? true : false;
+    channel.topic.value.split(" | ")[0] === "false" ? false : true;
 
-  console.log(`mergeStatusInTopic: ❌ ${mergeStatusInTopic} ❌`);
+  console.log(`mergeStatusInTopic: ${channel.topic.value.split(" ")[2]}`);
 
   if (mergeStatusInTopic !== pull.mergeable) {
-    const topic = `${pull.mergeable ? "❌ Not" : "✅"} Approved <> ${
-      pull.title
-    }`;
+    const topic = `${pull.mergeable} | ${pull.title}`;
 
     try {
       await slackApp.client.conversations.setTopic({
@@ -115,9 +113,7 @@ export const createPullChannel = async (
       unfurl_links: false,
     });
 
-    const topic = `${pull.mergeable ? "❌ Not" : "✅"} Approved <> ${
-      pull.title
-    }`;
+    const topic = `${pull.mergeable} | ${pull.title}`;
 
     // add a topic to the channel
     await slackApp.client.conversations.setTopic({
