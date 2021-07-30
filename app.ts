@@ -206,6 +206,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
           }
         }] + contextBlocks;
 
+        console.log(blocks);
 
     const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText, blocks: blocks, unfurl_links: false, unfurl_media: false });
 
