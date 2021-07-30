@@ -1,6 +1,7 @@
 import { App as GithubApp } from "octokit";
 import {
   App as SlackApp,
+  Block,
   ExpressReceiver as SlackExpressReceiver,
 } from "@slack/bolt";
 import dotenv from "dotenv";
@@ -202,11 +203,8 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
           text: {
             type: "mrkdwn",
             text: ":sonic: We are moving to Slack! Here is the context from Github (most recent 15 comments)",
-            emoji: true
           }
         }].concat(contextBlocks);
-
-        console.log(blocks.map(x => JSON.stringify(x)));
 
     const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText, blocks: blocks, unfurl_links: false, unfurl_media: false });
 
