@@ -11,6 +11,7 @@ import {
   addReviewersToChannel,
   createPullChannel,
   getChannelHistory,
+  getAllMembers,
   getSlackChannels,
   slackTextFromPullRequest,
   updateChannelTopic,
@@ -73,8 +74,10 @@ const onChangePull = async (pull: PullRequest) => {
 
   await updateChannelTopic(slackApp, pull, pullChannel);
 
+  const existingMembers = await getAllMembers(slackApp, pullChannel);
+
   if (!pullChannel.is_archived) {
-    await addReviewersToChannel(slackApp, pull, pullChannel);
+    await addReviewersToChannel(slackApp, pull, pullChannel, existingMembers);
 
     const me = (await slackApp.client.auth.test()).bot_id;
     const botCommentResponse = await slackApp.client.conversations.history({
@@ -102,8 +105,13 @@ const onChangePull = async (pull: PullRequest) => {
   }
 
   if (pull.state === "closed") {
-    console.log(`Channel ${pullChannel.name}: About to archive`);
+    console.log(`Channel ${pullChannel.name}: About to kick all Users Out`);
+    await Promise.all(existingMembers.map(member => {
+      slackApp.client.conversations.kick({ channel: pullChannel.id, user: member })
+    }));
+    console.log(`✅ Channel ${pullChannel.name}: Kicked all users :boot:`);
 
+    console.log(`Channel ${pullChannel.name}: About to archive`);
     try {
       await slackApp.client.conversations.archive({ channel: pullChannel.id });
       console.log(`✅ Channel ${pullChannel.name}: Successfully archived`);
