@@ -44,6 +44,10 @@ export const addComment = async (
     parseInt(process.env.GITHUB_INSTALLATION_ID)
   );
 
+
+  const splitName = command.channel_name.split('-');
+  const repoName = splitName.slice(2).join('-')
+
   const splitName = command.channel_name.split("-");
   const repoName = splitName.slice(2).join("-");
 
