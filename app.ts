@@ -171,7 +171,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
     const msgContext = contextComments.map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
     const firstMessageText = `:sonic: We are moving to Slack!\n\n${msgContext}`;
 
-    const contextBlocks = flatten(contextComments.map(comment => {
+    const contextBlocks = flatten(contextComments.map(comment => (
       [
         {
           type: "section",
@@ -194,7 +194,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
           type: "divider"
         }
       ]
-    }))
+    )))
     contextBlocks.pop()
 
     const blocks = [{
