@@ -1,7 +1,7 @@
 import { App as GithubApp } from "octokit";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
 import { SayFn, SlashCommand } from "@slack/bolt";
-import { PullRequest } from "@octokit/webhooks-types";
+import { PullRequest, PullRequestReviewComment } from "@octokit/webhooks-types";
 
 export const addInitialComment = async (
   githubApp: GithubApp,
@@ -91,3 +91,47 @@ export const getApproveReview = async (
     console.log(error);
   }
 };
+
+export const getReviewComment = async (
+  githubApp: GithubApp,
+  pull_number: number,
+  comment_id: number,
+): Promise<PullRequestReviewComment> => {
+  try {
+    const octokit = await githubApp.getInstallationOctokit(
+      parseInt(process.env.GITHUB_INSTALLATION_ID)
+    );
+
+    const reviewComments = await octokit.rest.pulls.getReviewComment({
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO,
+      pull_number,
+      comment_id,
+    });
+
+    console.log(`✅ PR#${pull_number}: Successfully fetched reviews`);
+    return reviewComments.data as PullRequestReviewComment;
+  } catch (error) {
+    console.log(`❌ PR#${pull_number}: Failed to fetch reviews`);
+    console.log(error);
+  }
+};
+
+export const postReviewComentReply = async (
+  githubApp: GithubApp,
+  pull_number: number,
+  comment_id: number,
+  reply: string,
+) => {
+    const octokit = await githubApp.getInstallationOctokit(
+      parseInt(process.env.GITHUB_INSTALLATION_ID)
+    );
+
+    return octokit.rest.pulls.createReplyForReviewComment({
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO,
+      pull_number,
+      comment_id,
+      body: reply,
+    })
+}

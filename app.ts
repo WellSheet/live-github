@@ -14,12 +14,12 @@ import {
   getSlackChannels,
   slackTextFromPullRequest,
 } from "./slack";
-import { addInitialComment, addComment } from "./github";
 import {
   PullRequest,
   PullRequestReviewSubmittedEvent,
 } from "@octokit/webhooks-types";
 import { minBy } from "lodash";
+import { addInitialComment, addComment, getApproveReview, getReviewComment, postReviewComentReply } from "./github";
 import { Message } from "@slack/web-api/dist/response/ConversationsHistoryResponse";
 
 dotenv.config({ path: "./.env.local" });
@@ -57,13 +57,15 @@ const githubApp = new GithubApp({
   privateKey: process.env.GITHUB_PRIVATE_KEY,
 });
 
+const channelNameFromPull = (pull: Pick<PullRequest, 'number' | 'base'>): string => `pr-${pull.number}-${pull.base.repo.name}`
+
 const onChangePull = async (pull: PullRequest) => {
   console.log("onChangePull() called");
 
   const channels = await getSlackChannels(slackApp);
 
   let pullChannel = channels.find(
-    (channel) => channel.name === `pr-${pull.number}-${pull.base.repo.name}`
+    channel => channel.name === channelNameFromPull(pull)
   );
 
   if (!pullChannel) {
@@ -77,10 +79,6 @@ const onChangePull = async (pull: PullRequest) => {
     await addReviewersToChannel(slackApp, pull, pullChannel);
 
     const me = (await slackApp.client.auth.test()).bot_id;
-    const botCommentResponse = await slackApp.client.conversations.history({
-      channel: pullChannel.id,
-      oldest: "0",
-    });
     const messages: Message[] = await getChannelHistory(slackApp, pullChannel);
     const botComment: Message = minBy(
       messages.filter((message) => message.bot_id == me),
@@ -148,6 +146,42 @@ const onSubmitPullRequestReview = async (
 
 webhooks.on("pull_request_review.submitted", async (data) => {
   await onSubmitPullRequestReview(data.payload);
+});
+
+webhooks.on("pull_request_review_comment.created", async ({payload}) => {
+  console.log("Corey Testing: ", payload);
+  const { comment, pull_request } = payload;
+  if (comment.body.toLowerCase().includes("take this to slack")) {
+    const channelName = channelNameFromPull(pull_request);
+
+    const channels = await getSlackChannels(slackApp);
+
+    const pullChannel = channels.find(
+      channel => channel.name === channelName
+    );
+
+
+    let contextComments = [comment];
+    while (contextComments[0].in_reply_to_id) {
+      const newComment = await getReviewComment(githubApp, pull_request.number, contextComments[0].in_reply_to_id);
+
+      contextComments.unshift(newComment);
+    }
+
+    const firstMessageText = `**:sonic: We are moving to Slack!**`;
+
+    const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText});
+
+    const msgContext = contextComments.map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
+    await slackApp.client.chat.postMessage({channel: pullChannel.id, text: `## Context:\n${msgContext}`, thread_ts: firstSlackComment.ts })
+
+    const threadUrlResponse = await slackApp.client.chat.getPermalink({ channel: pullChannel.id, message_ts: firstSlackComment.ts })
+
+    const githubCommentText = `We made a thread for you! Check it out here: ${threadUrlResponse.permalink}`
+    const originalGithubComment = contextComments[0];
+
+    await postReviewComentReply(githubApp, pull_request.number, originalGithubComment.id, githubCommentText)
+  }
 });
 
 slackApp.command("/add-pr-comment", async ({ command, ack, say, respond }) => {
