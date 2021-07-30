@@ -164,11 +164,11 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
 
     const allComments = await getReviewComments(githubApp, pull_request)
     const relevantComments = allComments.filter(c => c.in_reply_to_id === comment.in_reply_to_id || c.id === comment.id)
-    const contextComments: PullRequestReviewComment[] = sortBy(relevantComments, (comment: PullRequestReviewComment) => comment.created_at)
+    const contextComments: PullRequestReviewComment[] = sortBy(relevantComments, (comment: PullRequestReviewComment) => comment.created_at).slice(-15)
 
 
 
-    const msgContext = contextComments.slice(-15).map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
+    const msgContext = contextComments.map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
     const firstMessageText = `:sonic: We are moving to Slack!\n\n${msgContext}`;
 
     const contextBlocks = flatten(contextComments.map(comment => (
