@@ -14,8 +14,11 @@ import {
   getSlackChannels,
   slackTextFromPullRequest,
 } from "./slack";
-import { addInitialComment, addComment, getApproveReview } from "./github";
-import { PullRequest } from "@octokit/webhooks-types";
+import { addInitialComment, addComment } from "./github";
+import {
+  PullRequest,
+  PullRequestReviewSubmittedEvent,
+} from "@octokit/webhooks-types";
 import { minBy } from "lodash";
 import { Message } from "@slack/web-api/dist/response/ConversationsHistoryResponse";
 
@@ -111,6 +114,18 @@ const onChangePull = async (pull: PullRequest) => {
 
 webhooks.on("pull_request", async ({ payload }) => {
   await onChangePull(payload.pull_request);
+});
+
+const onSubmitPullRequestReview = async (
+  payload: PullRequestReviewSubmittedEvent
+) => {
+  const { review, pull_request } = payload;
+
+  console.log("onSubmitPullRequestReview(): " + review.state);
+};
+
+webhooks.on("pull_request_review.submitted", async (data) => {
+  await onSubmitPullRequestReview(data.payload);
 });
 
 slackApp.command("/add-pr-comment", async ({ command, ack, say, respond }) => {
