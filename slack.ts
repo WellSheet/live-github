@@ -53,7 +53,7 @@ export const updateChannelTopic = async (
       ? true
       : false;
 
-  console.log(`mergeStatusInTopic: ❌ ${channel.topic.value.split("<>")[0]} ❌`);
+  console.log(`mergeStatusInTopic: ❌ ${channel.topic.value.split(" ")[0]} ❌`);
 
   if (mergeStatusInTopic !== pull.mergeable) {
     const topic = `${pull.mergeable ? "❌ Not" : "✅"} Approved <> ${
