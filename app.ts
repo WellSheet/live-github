@@ -176,7 +176,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
 
     const githubCommentText = `We made a thread for you! Check it out here: ${threadUrlResponse.permalink}`
 
-    await postReviewComentReply(githubApp, pull_request.number, originalGithubComment.id, githubCommentText)
+    await postReviewComentReply(githubApp, pull_request.number, comment.in_reply_to_id || comment.id, githubCommentText)
   }
 });
 
