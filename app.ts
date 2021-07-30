@@ -168,7 +168,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
 
 
 
-    const msgContext = contextComments.slice(0, 16).map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
+    const msgContext = contextComments.slice(-15).map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
     const firstMessageText = `:sonic: We are moving to Slack!\n\n${msgContext}`;
 
     const contextBlocks = flatten(contextComments.map(comment => (
