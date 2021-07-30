@@ -118,8 +118,10 @@ webhooks.on("pull_request", async ({ payload }) => {
   await onChangePull(payload.pull_request);
 });
 
-slackApp.command("/add-pr-comment", async ({ command, ack, say }) => {
+slackApp.command("/add-pr-comment", async ({ command, ack, say, respond }) => {
   await ack();
+  if (!command.channel_name.startsWith("pr"))
+    await respond({ response_type: "ephemeral", text: 'This slash command can only be used in Pull Request Channels'});
   await addComment(githubApp, command, say);
 });
 

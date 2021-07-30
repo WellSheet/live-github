@@ -43,7 +43,7 @@ export const addComment = async (
   const octokit = await githubApp.getInstallationOctokit(
     parseInt(process.env.GITHUB_INSTALLATION_ID)
   );
-  
+
   const splitName = command.channel_name.split('-');
   const repoName = splitName.slice(2).join('-')
 
