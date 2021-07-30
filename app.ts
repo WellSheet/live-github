@@ -187,7 +187,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
           elements: [
             {
               type: "mrkdwn",
-              text: `Written by *${comment.user.login}* ${gitUserToSlackId[comment.user.login]}`
+              text: `Written by *${comment.user.login}* <@${gitUserToSlackId[comment.user.login]}>`
             }
           ]
         },
