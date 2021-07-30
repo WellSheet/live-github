@@ -12,6 +12,7 @@ import {
   createPullChannel,
   getChannelHistory,
   getSlackChannels,
+  gitUserToSlackId,
   slackTextFromPullRequest,
 } from "./slack";
 import {
@@ -165,13 +166,12 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
     const relevantComments = allComments.filter(c => c.in_reply_to_id === comment.in_reply_to_id || c.id === comment.id)
     const contextComments: PullRequestReviewComment[] = sortBy(relevantComments, (comment: PullRequestReviewComment) => comment.created_at)
 
-    const firstMessageText = `:sonic: We are moving to Slack!`;
 
-    const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText});
 
     const msgContext = contextComments.map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
+    const firstMessageText = `:sonic: We are moving to Slack!\n\n${msgContext}`;
 
-    const threadBlocks = flatten(contextComments.map(comment => {
+    const contextBlocks = flatten(contextComments.map(comment => {
       [
         {
           type: "section",
@@ -186,7 +186,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
           elements: [
             {
               type: "mrkdwn",
-              text: `Written by *${comment.user.login}*`
+              text: `Written by *${comment.user.login}* ${gitUserToSlackId[comment.user.login]}`
             }
           ]
         },
@@ -195,13 +195,23 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
         }
       ]
     }))
-    threadBlocks.pop()
+    contextBlocks.pop()
 
-    await slackApp.client.chat.postMessage({channel: pullChannel.id, blocks: threadBlocks, thread_ts: firstSlackComment.ts, text: msgContext })
+    const blocks = [{
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: ":sonic: We are moving to Slack! Here is the context from Github",
+            emoji: true
+          }
+        }] + contextBlocks;
 
-    const threadUrlResponse = await slackApp.client.chat.getPermalink({ channel: pullChannel.id, message_ts: firstSlackComment.ts })
 
-    const githubCommentText = `We made a thread for you! Check it out here: ${threadUrlResponse.permalink}`
+    const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText, blocks: blocks});
+
+    const slackUrlResponse = await slackApp.client.chat.getPermalink({ channel: pullChannel.id, message_ts: firstSlackComment.ts })
+
+    const githubCommentText = `We made a thread for you! Check it out here: ${slackUrlResponse.permalink}`
 
     await postReviewComentReply(githubApp, pull_request, comment.in_reply_to_id || comment.id, githubCommentText)
   }

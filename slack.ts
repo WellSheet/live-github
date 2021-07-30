@@ -3,7 +3,7 @@ import { App as SlackApp } from "@slack/bolt";
 import { Channel } from "@slack/web-api/dist/response/ConversationsListResponse";
 import { Message } from "@slack/web-api/dist/response/ConversationsHistoryResponse";
 
-const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
+export const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
 
 const paginate = async <T>(
   slackApp: SlackApp,
