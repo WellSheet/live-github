@@ -202,7 +202,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: ":sonic: We are moving to Slack! Here is the context from Github (most recent 15 comments)",
+            text: `:sonic: We are moving to Slack! Here is the context from Github (most recent 15 comments)\nView the whole thread here: ${relevantComments[0].html_url}`,
           }
         }].concat(contextBlocks);
 
