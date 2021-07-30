@@ -16,10 +16,11 @@ import {
 } from "./slack";
 import {
   PullRequest,
+  PullRequestReviewComment,
   PullRequestReviewSubmittedEvent,
 } from "@octokit/webhooks-types";
-import { minBy } from "lodash";
-import { addInitialComment, addComment, getApproveReview, getReviewComment, postReviewComentReply } from "./github";
+import { minBy, sortBy } from "lodash";
+import { addInitialComment, addComment, getApproveReview, getReviewComment, postReviewComentReply, getReviewComments } from "./github";
 import { Message } from "@slack/web-api/dist/response/ConversationsHistoryResponse";
 
 dotenv.config({ path: "./.env.local" });
@@ -160,13 +161,9 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
     );
 
 
-    let contextComments = [comment];
-    while (contextComments[0].in_reply_to_id) {
-      console.log(contextComments[0])
-      const newComment = await getReviewComment(githubApp, pull_request.number, contextComments[0].in_reply_to_id);
-
-      contextComments.unshift(newComment);
-    }
+    const allComments = await getReviewComments(githubApp, pull_request)
+    const relevantComments = allComments.filter(c => c.in_reply_to_id === comment.in_reply_to_id || c.id === comment.id)
+    const contextComments: PullRequestReviewComment[] = sortBy(relevantComments, (comment: PullRequestReviewComment) => comment.created_at)
 
     const firstMessageText = `:sonic: We are moving to Slack!`;
 
@@ -178,7 +175,6 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
     const threadUrlResponse = await slackApp.client.chat.getPermalink({ channel: pullChannel.id, message_ts: firstSlackComment.ts })
 
     const githubCommentText = `We made a thread for you! Check it out here: ${threadUrlResponse.permalink}`
-    const originalGithubComment = contextComments[0];
 
     await postReviewComentReply(githubApp, pull_request.number, originalGithubComment.id, githubCommentText)
   }

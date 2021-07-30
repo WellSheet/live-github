@@ -109,10 +109,33 @@ export const getReviewComment = async (
       comment_id,
     });
 
-    console.log(`✅ PR#${pull_number}: Successfully fetched reviews`);
+    console.log(`✅ PR#${pull_number}.${comment_id}: Successfully fetched review comment`);
     return reviewComments.data as PullRequestReviewComment;
   } catch (error) {
-    console.log(`❌ PR#${pull_number}: Failed to fetch reviews`);
+    console.log(`❌ PR#${pull_number}.${comment_id}: Failed to fetch review comment`);
+    console.log(error);
+  }
+};
+
+export const getReviewComments = async (
+  githubApp: GithubApp,
+  pull: Pick<PullRequest, "number" | "base">,
+) => {
+  try {
+    const octokit = await githubApp.getInstallationOctokit(
+      parseInt(process.env.GITHUB_INSTALLATION_ID)
+    );
+
+    const reviewComments = await octokit.rest.pulls.listReviewComments({
+      owner: process.env.GITHUB_OWNER,
+      repo: pull.base.repo.name,
+      pull_number: pull.number,
+    });
+
+    console.log(`✅ PR#${pull.number}: Successfully fetched review comments`);
+    return reviewComments.data as PullRequestReviewComment[];
+  } catch (error) {
+    console.log(`❌ PR#${pull.number}: Failed to fetch review comments`);
     console.log(error);
   }
 };
