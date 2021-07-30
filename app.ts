@@ -177,9 +177,8 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
         {
           type: "section",
           text: {
-            type: "plain_text",
-            text: comment.body,
-            emoji: true
+            type: "mrkdwn",
+            text: comment.body
           }
         },
         {
