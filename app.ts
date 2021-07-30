@@ -13,11 +13,10 @@ import {
   getChannelHistory,
   getSlackChannels,
   slackTextFromPullRequest,
-  updateChannelTopic,
 } from "./slack";
 import { addInitialComment, addComment, getApproveReview } from "./github";
 import { PullRequest } from "@octokit/webhooks-types";
-import { minBy } from 'lodash';
+import { minBy } from "lodash";
 import { Message } from "@slack/web-api/dist/response/ConversationsHistoryResponse";
 
 dotenv.config({ path: "./.env.local" });
@@ -71,8 +70,6 @@ const onChangePull = async (pull: PullRequest) => {
     await addInitialComment(githubApp, pull, pullChannel);
   }
 
-  await updateChannelTopic(slackApp, pull, pullChannel);
-
   if (!pullChannel.is_archived) {
     await addReviewersToChannel(slackApp, pull, pullChannel);
 
@@ -83,9 +80,7 @@ const onChangePull = async (pull: PullRequest) => {
     });
     const messages: Message[] = await getChannelHistory(slackApp, pullChannel);
     const botComment: Message = minBy(
-      messages.filter(
-        (message) => message.bot_id == me
-      ),
+      messages.filter((message) => message.bot_id == me),
       (message: Message) => message.ts
     );
 
@@ -121,7 +116,10 @@ webhooks.on("pull_request", async ({ payload }) => {
 slackApp.command("/add-pr-comment", async ({ command, ack, say, respond }) => {
   await ack();
   if (!command.channel_name.startsWith("pr"))
-    await respond({ response_type: "ephemeral", text: 'This slash command can only be used in Pull Request Channels'});
+    await respond({
+      response_type: "ephemeral",
+      text: "This slash command can only be used in Pull Request Channels",
+    });
   await addComment(githubApp, command, say);
 });
 

@@ -66,38 +66,6 @@ ${pull.body}
 `;
 };
 
-export const updateChannelTopic = async (
-  slackApp: SlackApp,
-  pull: PullRequest,
-  channel: Channel
-) => {
-  const mergeStatusInTopic =
-    channel.topic.value.split(" | ")[0] === "false" ? false : true;
-
-  console.log(`mergeStatusInTopic: ${mergeStatusInTopic}`);
-
-  if (mergeStatusInTopic !== pull.mergeable) {
-    const topic = `${pull.mergeable} | ${pull.title}`;
-    console.log("mergeStatusInTopic !== pull.mergeable");
-
-    try {
-      await slackApp.client.conversations.setTopic({
-        channel: channel.id,
-        topic,
-      });
-
-      console.log(
-        `✅ Channel ${channel.name}: Successfully updated the mergeable status in topic`
-      );
-    } catch (error) {
-      console.log(
-        `❌ Channel ${channel.name}: Failed to update the mergeable status in topic`
-      );
-      console.log(error);
-    }
-  }
-};
-
 export const createPullChannel = async (
   slackApp: SlackApp,
   pull: PullRequest
@@ -114,12 +82,10 @@ export const createPullChannel = async (
       unfurl_links: false,
     });
 
-    const topic = `${pull.mergeable} | ${pull.title}`;
-
     // add a topic to the channel
     await slackApp.client.conversations.setTopic({
       channel: newChannel.channel.id,
-      topic,
+      topic: pull.title,
     });
 
     console.log(`✅ PR#${pull.number}: Successfully created channel`);
