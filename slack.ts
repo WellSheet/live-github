@@ -125,8 +125,9 @@ export const createPullChannel = async (
   }
 };
 
-export const getAllMembers = async (
+const getAllMembers = async (
   slackApp: SlackApp,
+  pull: PullRequest,
   channel: Channel
 ) => {
   try {
@@ -135,10 +136,10 @@ export const getAllMembers = async (
     });
     const allMembers: string[] = await paginate(slackApp, members, x => x.members);
 
-    console.log(`✅ Channel#${channel.name}: Successfully fetched all slack members`);
+    console.log(`✅ PR#${pull.number}: Successfully fetched all slack members`);
     return allMembers;
   } catch (error) {
-    console.log(`❌ Channel#${channel.name}: Failed to fetched all slack members`);
+    console.log(`❌ PR#${pull.number}: Failed to fetched all slack members`);
     console.log(error);
   }
 };
@@ -146,11 +147,10 @@ export const getAllMembers = async (
 export const addReviewersToChannel = async (
   slackApp: SlackApp,
   pull: PullRequest,
-  channel: Channel,
-  existingMembers?: string[],
+  channel: Channel
 ) => {
   try {
-    const allMembers = existingMembers || await getAllMembers(slackApp, channel);
+    const allMembers = await getAllMembers(slackApp, pull, channel);
 
     const reviewers = pull.requested_reviewers
       .map((reviewer: User) => gitUserToSlackId[reviewer.login])
