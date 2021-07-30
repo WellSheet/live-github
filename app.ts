@@ -19,7 +19,7 @@ import {
   PullRequestReviewComment,
   PullRequestReviewSubmittedEvent,
 } from "@octokit/webhooks-types";
-import { minBy, sortBy } from "lodash";
+import { minBy, sortBy, flatten } from "lodash";
 import { addInitialComment, addComment, getApproveReview, postReviewComentReply, getReviewComments } from "./github";
 import { Message } from "@slack/web-api/dist/response/ConversationsHistoryResponse";
 
@@ -169,8 +169,33 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
 
     const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText});
 
-    const msgContext = contextComments.map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
-    await slackApp.client.chat.postMessage({channel: pullChannel.id, text: `## Context:\n${msgContext}`, thread_ts: firstSlackComment.ts })
+    const threadBlocks = flatten(contextComments.map(comment => {
+      [
+        {
+          type: "section",
+          text: {
+            type: "plain_text",
+            text: comment.body,
+            emoji: true
+          }
+        },
+        {
+          type: "context",
+          elements: [
+            {
+              type: "mrkdwn",
+              text: `Written by *${comment.user.login}*`
+            }
+          ]
+        },
+        {
+          type: "divider"
+        }
+      ]
+    }))
+    threadBlocks.pop()
+
+    await slackApp.client.chat.postMessage({channel: pullChannel.id, blocks: threadBlocks, thread_ts: firstSlackComment.ts })
 
     const threadUrlResponse = await slackApp.client.chat.getPermalink({ channel: pullChannel.id, message_ts: firstSlackComment.ts })
 
