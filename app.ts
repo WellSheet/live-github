@@ -169,6 +169,8 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
 
     const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText});
 
+    const msgContext = contextComments.map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
+
     const threadBlocks = flatten(contextComments.map(comment => {
       [
         {
@@ -195,7 +197,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
     }))
     threadBlocks.pop()
 
-    await slackApp.client.chat.postMessage({channel: pullChannel.id, blocks: threadBlocks, thread_ts: firstSlackComment.ts })
+    await slackApp.client.chat.postMessage({channel: pullChannel.id, blocks: threadBlocks, thread_ts: firstSlackComment.ts, text: msgContext })
 
     const threadUrlResponse = await slackApp.client.chat.getPermalink({ channel: pullChannel.id, message_ts: firstSlackComment.ts })
 
