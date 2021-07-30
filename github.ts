@@ -47,18 +47,19 @@ export const addComment = async (
   const splitName = command.channel_name.split("-");
   const repoName = splitName.slice(2).join("-");
 
-  const pull_number = parseInt(splitName[1]);
-  const body = `*${command.user_name}* says:\n${command.text}`;
+  const pullNumber = parseInt(splitName[1]);
+  const githubBody = `**${command.user_name}** says:\n${command.text}`
+  const slackBody = `*${command.user_name}* says:\n${command.text}\n_Comment posted to Github_`;
 
   try {
     await octokit.rest.issues.createComment({
       owner: process.env.GITHUB_OWNER,
       repo: repoName,
-      issue_number: pull_number,
-      body,
+      issue_number: pullNumber,
+      body: githubBody,
     });
 
-    say(`${body}\n_Comment posted to Github_`);
+    say(slackBody);
     console.log(
       `✅ Channel ${command.channel_name}: Successfully added a comment`
     );
