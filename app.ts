@@ -149,7 +149,6 @@ webhooks.on("pull_request_review.submitted", async (data) => {
 });
 
 webhooks.on("pull_request_review_comment.created", async ({payload}) => {
-  console.log("Corey Testing: ", payload);
   const { comment, pull_request } = payload;
   if (comment.body.toLowerCase().includes("take this to slack")) {
     const channelName = channelNameFromPull(pull_request);
@@ -163,12 +162,13 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
 
     let contextComments = [comment];
     while (contextComments[0].in_reply_to_id) {
+      console.log(contextComments[0])
       const newComment = await getReviewComment(githubApp, pull_request.number, contextComments[0].in_reply_to_id);
 
       contextComments.unshift(newComment);
     }
 
-    const firstMessageText = `**:sonic: We are moving to Slack!**`;
+    const firstMessageText = `:sonic: We are moving to Slack!`;
 
     const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText});
 
