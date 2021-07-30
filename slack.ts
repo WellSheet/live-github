@@ -5,7 +5,11 @@ import { Message } from "@slack/web-api/dist/response/ConversationsHistoryRespon
 
 const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID);
 
-const paginate = async <T>(slackApp: SlackApp, initialQuery: any, extractElements: (query: any) => T[]): Promise<T[]> => {
+const paginate = async <T>(
+  slackApp: SlackApp,
+  initialQuery: any,
+  extractElements: (query: any) => T[]
+): Promise<T[]> => {
   let collection = extractElements(initialQuery);
 
   let nextCursor = initialQuery.response_metadata.next_cursor;
@@ -19,13 +23,16 @@ const paginate = async <T>(slackApp: SlackApp, initialQuery: any, extractElement
   }
 
   return collection;
-}
+};
 
 export const getSlackChannels = async (slackApp: SlackApp) => {
   try {
-
     const initChannels = await slackApp.client.conversations.list();
-    const allChannels: Channel[] = await paginate(slackApp, initChannels, x => x.channels);
+    const allChannels: Channel[] = await paginate(
+      slackApp,
+      initChannels,
+      (x) => x.channels
+    );
 
     console.log("✅ Success - fetched all channels");
     return allChannels;
@@ -35,14 +42,17 @@ export const getSlackChannels = async (slackApp: SlackApp) => {
   }
 };
 
-export const getChannelHistory = async (slackApp: SlackApp, channel: Channel): Promise<Message[]> => {
-    const botCommentResponse = await slackApp.client.conversations.history({
-      channel: channel.id,
-      oldest: "0",
-    });
+export const getChannelHistory = async (
+  slackApp: SlackApp,
+  channel: Channel
+): Promise<Message[]> => {
+  const botCommentResponse = await slackApp.client.conversations.history({
+    channel: channel.id,
+    oldest: "0",
+  });
 
-    return await paginate(slackApp, botCommentResponse, x => x.messages);
-}
+  return await paginate(slackApp, botCommentResponse, (x) => x.messages);
+};
 
 export const slackTextFromPullRequest = (pull: PullRequest): string => {
   return `
@@ -62,11 +72,9 @@ export const updateChannelTopic = async (
   channel: Channel
 ) => {
   const mergeStatusInTopic =
-    channel.topic.value.split(" ")[0] === ":x: Not Approved &lt;&gt; test"
-      ? true
-      : false;
+    channel.topic.value.split(" ")[0] === ":x:" ? true : false;
 
-  console.log(`mergeStatusInTopic: ❌ ${channel.topic.value.split(" ")[0]} ❌`);
+  console.log(`mergeStatusInTopic: ❌ ${mergeStatusInTopic} ❌`);
 
   if (mergeStatusInTopic !== pull.mergeable) {
     const topic = `${pull.mergeable ? "❌ Not" : "✅"} Approved <> ${
@@ -134,7 +142,11 @@ const getAllMembers = async (
     const members = await slackApp.client.conversations.members({
       channel: channel.id,
     });
-    const allMembers: string[] = await paginate(slackApp, members, x => x.members);
+    const allMembers: string[] = await paginate(
+      slackApp,
+      members,
+      (x) => x.members
+    );
 
     console.log(`✅ PR#${pull.number}: Successfully fetched all slack members`);
     return allMembers;
