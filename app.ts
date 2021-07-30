@@ -22,7 +22,13 @@ import {
   PullRequestReviewSubmittedEvent,
 } from "@octokit/webhooks-types";
 import { minBy, sortBy, flatten } from "lodash";
-import { addInitialComment, addComment, getApproveReview, postReviewComentReply, getReviewComments } from "./github";
+import {
+  addInitialComment,
+  addComment,
+  getApproveReview,
+  postReviewComentReply,
+  getReviewComments,
+} from "./github";
 import { Message } from "@slack/web-api/dist/response/ConversationsHistoryResponse";
 
 dotenv.config({ path: "./.env.local" });
@@ -60,7 +66,9 @@ const githubApp = new GithubApp({
   privateKey: process.env.GITHUB_PRIVATE_KEY,
 });
 
-const channelNameFromPull = (pull: Pick<PullRequest, 'number' | 'base'>): string => `pr-${pull.number}-${pull.base.repo.name}`
+const channelNameFromPull = (
+  pull: Pick<PullRequest, "number" | "base">
+): string => `pr-${pull.number}-${pull.base.repo.name}`;
 
 const onChangePull = async (pull: PullRequest) => {
   console.log("onChangePull() called");
@@ -68,7 +76,7 @@ const onChangePull = async (pull: PullRequest) => {
   const channels = await getSlackChannels(slackApp);
 
   let pullChannel = channels.find(
-    channel => channel.name === channelNameFromPull(pull)
+    (channel) => channel.name === channelNameFromPull(pull)
   );
 
   if (!pullChannel) {
@@ -145,14 +153,13 @@ const onSubmitPullRequestReview = async (
       console.log(error);
     }
   }
-  
 };
 
 webhooks.on("pull_request_review.submitted", async (data) => {
   await onSubmitPullRequestReview(data.payload);
 });
 
-webhooks.on("pull_request_review_comment.created", async ({payload}) => {
+webhooks.on("pull_request_review_comment.created", async ({ payload }) => {
   const { comment, pull_request } = payload;
   if (comment.body.toLowerCase().includes("take this to slack")) {
     const channelName = channelNameFromPull(pull_request);
@@ -160,59 +167,81 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
     const channels = await getSlackChannels(slackApp);
 
     const pullChannel = channels.find(
-      channel => channel.name === channelName
+      (channel) => channel.name === channelName
     );
 
+    const allComments = await getReviewComments(githubApp, pull_request);
+    const relevantComments = allComments.filter(
+      (c) => c.in_reply_to_id === comment.in_reply_to_id || c.id === comment.id
+    );
+    const contextComments: PullRequestReviewComment[] = sortBy(
+      relevantComments,
+      (comment: PullRequestReviewComment) => comment.created_at
+    ).slice(-15);
 
-    const allComments = await getReviewComments(githubApp, pull_request)
-    const relevantComments = allComments.filter(c => c.in_reply_to_id === comment.in_reply_to_id || c.id === comment.id)
-    const contextComments: PullRequestReviewComment[] = sortBy(relevantComments, (comment: PullRequestReviewComment) => comment.created_at).slice(-15)
-
-
-
-    const msgContext = contextComments.map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
+    const msgContext = contextComments
+      .map((comment) => `Written By: ${comment.user.login}\n${comment.body}`)
+      .join("\n\n");
     const firstMessageText = `:sonic: We are moving to Slack!\n\n${msgContext}`;
 
-    const contextBlocks = flatten(contextComments.map(comment => (
-      [
+    const contextBlocks = flatten(
+      contextComments.map((comment) => [
         {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: comment.body
-          }
+            text: comment.body,
+          },
         },
         {
           type: "context",
           elements: [
             {
               type: "mrkdwn",
-              text: `Written by *${comment.user.login}* <@${gitUserToSlackId[comment.user.login]}>`
-            }
-          ]
+              text: `Written by *${comment.user.login}* <@${
+                gitUserToSlackId[comment.user.login]
+              }>`,
+            },
+          ],
         },
         {
-          type: "divider"
-        }
-      ]
-    )))
-    contextBlocks.pop()
+          type: "divider",
+        },
+      ])
+    );
+    contextBlocks.pop();
 
-    const blocks = [{
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `:sonic: We are moving to Slack! Here is the context from Github (most recent 15 comments)\nView the whole thread here: ${relevantComments[0].html_url}`,
-          }
-        }].concat(contextBlocks);
+    const blocks = [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `:sonic: We are moving to Slack! Here is the context from Github (most recent 15 comments)\nView the whole thread here: ${relevantComments[0].html_url}`,
+        },
+      },
+    ].concat(contextBlocks);
 
-    const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText, blocks: blocks, unfurl_links: false, unfurl_media: false });
+    const firstSlackComment = await slackApp.client.chat.postMessage({
+      channel: pullChannel.id,
+      text: firstMessageText,
+      blocks: blocks,
+      unfurl_links: false,
+      unfurl_media: false,
+    });
 
-    const slackUrlResponse = await slackApp.client.chat.getPermalink({ channel: pullChannel.id, message_ts: firstSlackComment.ts })
+    const slackUrlResponse = await slackApp.client.chat.getPermalink({
+      channel: pullChannel.id,
+      message_ts: firstSlackComment.ts,
+    });
 
-    const githubCommentText = `We made a thread for you! Check it out here: ${slackUrlResponse.permalink}`
+    const githubCommentText = `We made a thread for you! Check it out here: ${slackUrlResponse.permalink}`;
 
-    await postReviewComentReply(githubApp, pull_request, comment.in_reply_to_id || comment.id, githubCommentText)
+    await postReviewComentReply(
+      githubApp,
+      pull_request,
+      comment.in_reply_to_id || comment.id,
+      githubCommentText
+    );
   }
 });
 

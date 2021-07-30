@@ -48,7 +48,7 @@ export const addComment = async (
   const repoName = splitName.slice(2).join("-");
 
   const pullNumber = parseInt(splitName[1]);
-  const githubBody = `**${command.user_name}** says:\n${command.text}`
+  const githubBody = `**${command.user_name}** says:\n${command.text}`;
   const slackBody = `*${command.user_name}* says:\n${command.text}\n_Comment posted to Github_`;
 
   try {
@@ -95,7 +95,7 @@ export const getApproveReview = async (
 
 export const getReviewComments = async (
   githubApp: GithubApp,
-  pull: Pick<PullRequest, "number" | "base">,
+  pull: Pick<PullRequest, "number" | "base">
 ) => {
   try {
     const octokit = await githubApp.getInstallationOctokit(
@@ -118,19 +118,19 @@ export const getReviewComments = async (
 
 export const postReviewComentReply = async (
   githubApp: GithubApp,
-  pull: Pick<PullRequest,'number' | 'base'>,
+  pull: Pick<PullRequest, "number" | "base">,
   comment_id: number,
-  reply: string,
+  reply: string
 ) => {
-    const octokit = await githubApp.getInstallationOctokit(
-      parseInt(process.env.GITHUB_INSTALLATION_ID)
-    );
+  const octokit = await githubApp.getInstallationOctokit(
+    parseInt(process.env.GITHUB_INSTALLATION_ID)
+  );
 
-    return octokit.rest.pulls.createReplyForReviewComment({
-      owner: process.env.GITHUB_OWNER,
-      repo: pull.base.repo.name,
-      pull_number: pull.number,
-      comment_id,
-      body: reply,
-    })
-}
+  return octokit.rest.pulls.createReplyForReviewComment({
+    owner: process.env.GITHUB_OWNER,
+    repo: pull.base.repo.name,
+    pull_number: pull.number,
+    comment_id,
+    body: reply,
+  });
+};
