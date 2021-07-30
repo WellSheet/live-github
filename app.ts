@@ -168,7 +168,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
 
 
 
-    const msgContext = contextComments.map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
+    const msgContext = contextComments.slice(0, 16).map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
     const firstMessageText = `:sonic: We are moving to Slack!\n\n${msgContext}`;
 
     const contextBlocks = flatten(contextComments.map(comment => (
@@ -201,7 +201,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
           type: "section",
           text: {
             type: "mrkdwn",
-            text: ":sonic: We are moving to Slack! Here is the context from Github",
+            text: ":sonic: We are moving to Slack! Here is the context from Github (most recent 15 comments)",
             emoji: true
           }
         }].concat(contextBlocks);
