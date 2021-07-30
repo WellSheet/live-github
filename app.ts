@@ -207,7 +207,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
         }] + contextBlocks;
 
 
-    const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText, blocks: blocks});
+    const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText, blocks: blocks, unfurl_links: false, unfurl_media: false });
 
     const slackUrlResponse = await slackApp.client.chat.getPermalink({ channel: pullChannel.id, message_ts: firstSlackComment.ts })
 
