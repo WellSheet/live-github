@@ -204,9 +204,9 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
             text: ":sonic: We are moving to Slack! Here is the context from Github",
             emoji: true
           }
-        }] + contextBlocks;
+        }].concat(contextBlocks);
 
-        console.log(blocks.map(JSON.stringify));
+        console.log(blocks.map(x => JSON.stringify(x)));
 
     const firstSlackComment = await slackApp.client.chat.postMessage({ channel: pullChannel.id, text: firstMessageText, blocks: blocks, unfurl_links: false, unfurl_media: false });
 
