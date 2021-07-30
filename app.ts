@@ -119,9 +119,31 @@ webhooks.on("pull_request", async ({ payload }) => {
 const onSubmitPullRequestReview = async (
   payload: PullRequestReviewSubmittedEvent
 ) => {
-  const { review, pull_request } = payload;
+  const { review, pull_request: pull } = payload;
 
-  console.log("onSubmitPullRequestReview(): " + review.state);
+  if (review.state === "approved") {
+    const channels = await getSlackChannels(slackApp);
+
+    let pullChannel = channels.find(
+      (channel) => channel.name === `pr-${pull.number}-${pull.base.repo.name}`
+    );
+
+    try {
+      await slackApp.client.chat.postMessage({
+        channel: pullChannel.id,
+        text: `@here ${review.user.login} approved this PR! `,
+      });
+
+      console.log(
+        `✅ Channel ${pullChannel.name} - Successfully sent PR approval message`
+      );
+    } catch (error) {
+      console.log(
+        `❌ Channel ${pullChannel.name} - Failed to send PR approval message`
+      );
+      console.log(error);
+    }
+  }
 };
 
 webhooks.on("pull_request_review.submitted", async (data) => {
