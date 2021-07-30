@@ -122,6 +122,10 @@ const onSubmitPullRequestReview = async (
   const { review, pull_request } = payload;
 
   console.log("onSubmitPullRequestReview(): " + review.state);
+
+  if (review.state === "APPROVED") {
+    console.log("THIS IS A APPROVED EVENT")
+  }
 };
 
 webhooks.on("pull_request_review.submitted", async (data) => {
