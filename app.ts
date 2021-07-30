@@ -10,12 +10,15 @@ import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
 import {
   addReviewersToChannel,
   createPullChannel,
+  getChannelHistory,
   getSlackChannels,
   slackTextFromPullRequest,
   updateChannelTopic,
 } from "./slack";
 import { addInitialComment, addComment, getApproveReview } from "./github";
 import { PullRequest } from "@octokit/webhooks-types";
+import { minBy } from 'lodash';
+import { Message } from "@slack/web-api/dist/response/ConversationsHistoryResponse";
 
 dotenv.config({ path: "./.env.local" });
 
@@ -77,10 +80,13 @@ const onChangePull = async (pull: PullRequest) => {
     const botCommentResponse = await slackApp.client.conversations.history({
       channel: pullChannel.id,
       oldest: "0",
-      limit: 5,
     });
-    const botComment = botCommentResponse.messages.find(
-      (message) => message.bot_id == me
+    const messages: Message[] = await getChannelHistory(slackApp, pullChannel);
+    const botComment: Message = minBy(
+      messages.filter(
+        (message) => message.bot_id == me
+      ),
+      (message: Message) => message.ts
     );
 
     if (botComment) {
