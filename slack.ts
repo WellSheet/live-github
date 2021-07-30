@@ -78,6 +78,7 @@ export const updateChannelTopic = async (
 
   if (mergeStatusInTopic !== pull.mergeable) {
     const topic = `${pull.mergeable} | ${pull.title}`;
+    console.log("mergeStatusInTopic !== pull.mergeable");
 
     try {
       await slackApp.client.conversations.setTopic({
