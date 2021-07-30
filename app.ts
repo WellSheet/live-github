@@ -20,7 +20,7 @@ import {
   PullRequestReviewSubmittedEvent,
 } from "@octokit/webhooks-types";
 import { minBy, sortBy } from "lodash";
-import { addInitialComment, addComment, getApproveReview, getReviewComment, postReviewComentReply, getReviewComments } from "./github";
+import { addInitialComment, addComment, getApproveReview, postReviewComentReply, getReviewComments } from "./github";
 import { Message } from "@slack/web-api/dist/response/ConversationsHistoryResponse";
 
 dotenv.config({ path: "./.env.local" });
@@ -176,7 +176,7 @@ webhooks.on("pull_request_review_comment.created", async ({payload}) => {
 
     const githubCommentText = `We made a thread for you! Check it out here: ${threadUrlResponse.permalink}`
 
-    await postReviewComentReply(githubApp, pull_request.number, comment.in_reply_to_id || comment.id, githubCommentText)
+    await postReviewComentReply(githubApp, pull_request, comment.in_reply_to_id || comment.id, githubCommentText)
   }
 });
 

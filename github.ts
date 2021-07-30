@@ -70,7 +70,7 @@ export const addComment = async (
 
 export const getApproveReview = async (
   githubApp: GithubApp,
-  pull_number: number
+  pull: PullRequest
 ) => {
   try {
     const octokit = await githubApp.getInstallationOctokit(
@@ -79,40 +79,15 @@ export const getApproveReview = async (
 
     const reviewComments = await octokit.rest.pulls.get({
       owner: process.env.GITHUB_OWNER,
-      repo: process.env.GITHUB_REPO,
-      pull_number,
+      repo: pull.base.repo.name,
+      pull_number: pull.number,
     });
 
     console.log(reviewComments.data);
-    console.log(`✅ PR#${pull_number}: Successfully fetched reviews`);
+    console.log(`✅ PR#${pull.number}: Successfully fetched reviews`);
     return reviewComments;
   } catch (error) {
-    console.log(`❌ PR#${pull_number}: Failed to fetch reviews`);
-    console.log(error);
-  }
-};
-
-export const getReviewComment = async (
-  githubApp: GithubApp,
-  pull_number: number,
-  comment_id: number,
-): Promise<PullRequestReviewComment> => {
-  try {
-    const octokit = await githubApp.getInstallationOctokit(
-      parseInt(process.env.GITHUB_INSTALLATION_ID)
-    );
-
-    const reviewComments = await octokit.rest.pulls.getReviewComment({
-      owner: process.env.GITHUB_OWNER,
-      repo: process.env.GITHUB_REPO,
-      pull_number,
-      comment_id,
-    });
-
-    console.log(`✅ PR#${pull_number}.${comment_id}: Successfully fetched review comment`);
-    return reviewComments.data as PullRequestReviewComment;
-  } catch (error) {
-    console.log(`❌ PR#${pull_number}.${comment_id}: Failed to fetch review comment`);
+    console.log(`❌ PR#${pull.number}: Failed to fetch reviews`);
     console.log(error);
   }
 };
@@ -142,7 +117,7 @@ export const getReviewComments = async (
 
 export const postReviewComentReply = async (
   githubApp: GithubApp,
-  pull_number: number,
+  pull: Pick<PullRequest,'number' | 'base'>,
   comment_id: number,
   reply: string,
 ) => {
@@ -152,8 +127,8 @@ export const postReviewComentReply = async (
 
     return octokit.rest.pulls.createReplyForReviewComment({
       owner: process.env.GITHUB_OWNER,
-      repo: process.env.GITHUB_REPO,
-      pull_number,
+      repo: pull.base.repo.name,
+      pull_number: pull.number,
       comment_id,
       body: reply,
     })
