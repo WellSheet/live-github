@@ -26,13 +26,14 @@ The channel name will be \`${channelName}\`.
 `.trim()
 
   if (existingManagedComment) {
-    await octokit.rest.issues.updateComment({
-      owner: process.env.GITHUB_OWNER!,
-      repo: pull.base.repo.name,
-      issue_number: pull.number,
-      body: commentBody,
-      comment_id: existingManagedComment.id,
-    })
+    if (existingManagedComment.body !== commentBody)
+      await octokit.rest.issues.updateComment({
+        owner: process.env.GITHUB_OWNER!,
+        repo: pull.base.repo.name,
+        issue_number: pull.number,
+        body: commentBody,
+        comment_id: existingManagedComment.id,
+      })
   } else {
     try {
       await octokit.rest.issues.createComment({
