@@ -3,7 +3,7 @@ import { App as SlackApp } from '@slack/bolt'
 import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
 import { Message } from '@slack/web-api/dist/response/ConversationsHistoryResponse'
 
-export const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID)
+export const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID!)
 
 const paginate = async <T>(
   slackApp: SlackApp,
@@ -21,13 +21,13 @@ const paginate = async <T>(
     })
 
     collection = [...collection, ...extractElements(moreElements)]
-    nextCursor = moreElements.response_metadata.next_cursor
+    nextCursor = moreElements?.response_metadata?.next_cursor
   }
 
   return collection
 }
 
-export const getSlackChannels = async (slackApp: SlackApp): Promise<Channel[]> => {
+export const getSlackChannels = async (slackApp: SlackApp): Promise<Channel[] | undefined> => {
   try {
     const initChannels = await slackApp.client.conversations.list()
     const allChannels: Channel[] = await paginate(slackApp, initChannels, x => x.channels)
@@ -41,6 +41,8 @@ export const getSlackChannels = async (slackApp: SlackApp): Promise<Channel[]> =
 }
 
 export const getChannelHistory = async (slackApp: SlackApp, channel: Channel): Promise<Message[]> => {
+  if (!channel.id) return []
+
   const botCommentResponse = await slackApp.client.conversations.history({
     channel: channel.id,
     oldest: '0',
@@ -61,22 +63,23 @@ ${pull.body}
 `
 }
 
-export const createPullChannel = async (slackApp: SlackApp, pull: PullRequest): Promise<Channel> => {
+export const createPullChannel = async (slackApp: SlackApp, pull: PullRequest): Promise<Channel | undefined> => {
   try {
     const newChannel = await slackApp.client.conversations.create({
       name: `pr-${pull.number}-${pull.base.repo.name}`,
     })
+    const newChannelId = newChannel.channel!.id!
 
     const text = slackTextFromPullRequest(pull)
     await slackApp.client.chat.postMessage({
-      channel: newChannel.channel.id,
+      channel: newChannelId,
       text,
       unfurl_links: false,
     })
 
     // add a topic to the channel
     await slackApp.client.conversations.setTopic({
-      channel: newChannel.channel.id,
+      channel: newChannelId,
       topic: pull.title,
     })
 
@@ -89,6 +92,8 @@ export const createPullChannel = async (slackApp: SlackApp, pull: PullRequest): 
 }
 
 const getAllMembers = async (slackApp: SlackApp, pull: PullRequest, channel: Channel) => {
+  if (!channel.id) return []
+
   try {
     const members = await slackApp.client.conversations.members({
       channel: channel.id,
@@ -108,14 +113,14 @@ export const addReviewersToChannel = async (slackApp: SlackApp, pull: PullReques
     const allMembers = await getAllMembers(slackApp, pull, channel)
 
     const reviewers = pull.requested_reviewers
-      .map((reviewer: User) => gitUserToSlackId[reviewer.login])
+      .map(reviewer => 'login' in reviewer && gitUserToSlackId[reviewer.login])
       .concat(gitUserToSlackId[pull.user.login])
 
-    const reviewerToInvite = reviewers.some(reviewer => !allMembers.includes(reviewer))
+    const reviewerToInvite = reviewers.some(reviewer => !allMembers || !allMembers.includes(reviewer))
 
     const reviewersString = reviewers.join(',')
 
-    if (reviewerToInvite) {
+    if (reviewerToInvite && channel.id) {
       await slackApp.client.conversations.invite({
         channel: channel.id,
         emails: [],

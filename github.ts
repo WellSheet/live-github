@@ -4,7 +4,7 @@ import { SayFn, SlashCommand } from '@slack/bolt'
 import { PullRequest, PullRequestReviewComment } from '@octokit/webhooks-types'
 
 export const addInitialComment = async (githubApp: GithubApp, pull: PullRequest, channel: Channel): Promise<void> => {
-  const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID))
+  const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
 
   const commentBody = `A Slack Channel was created for discussion of this PR :tada:
 
@@ -14,7 +14,7 @@ The channel name is \`${channel.name}\`. All the reviewers have been invited to 
 
   try {
     await octokit.rest.issues.createComment({
-      owner: process.env.GITHUB_OWNER,
+      owner: process.env.GITHUB_OWNER!,
       repo: pull.base.repo.name,
       issue_number: pull.number,
       body: commentBody,
@@ -28,7 +28,7 @@ The channel name is \`${channel.name}\`. All the reviewers have been invited to 
 }
 
 export const addComment = async (githubApp: GithubApp, command: SlashCommand, say: SayFn): Promise<void> => {
-  const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID))
+  const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
 
   const splitName = command.channel_name.split('-')
   const repoName = splitName.slice(2).join('-')
@@ -39,7 +39,7 @@ export const addComment = async (githubApp: GithubApp, command: SlashCommand, sa
 
   try {
     await octokit.rest.issues.createComment({
-      owner: process.env.GITHUB_OWNER,
+      owner: process.env.GITHUB_OWNER!,
       repo: repoName,
       issue_number: pullNumber,
       body: githubBody,
@@ -55,10 +55,10 @@ export const addComment = async (githubApp: GithubApp, command: SlashCommand, sa
 
 export const getApproveReview = async (githubApp: GithubApp, pull: PullRequest) => {
   try {
-    const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID))
+    const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
 
     const reviewComments = await octokit.rest.pulls.get({
-      owner: process.env.GITHUB_OWNER,
+      owner: process.env.GITHUB_OWNER!,
       repo: pull.base.repo.name,
       pull_number: pull.number,
     })
@@ -74,10 +74,10 @@ export const getApproveReview = async (githubApp: GithubApp, pull: PullRequest) 
 
 export const getReviewComments = async (githubApp: GithubApp, pull: Pick<PullRequest, 'number' | 'base'>) => {
   try {
-    const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID))
+    const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
 
     const reviewComments = await octokit.rest.pulls.listReviewComments({
-      owner: process.env.GITHUB_OWNER,
+      owner: process.env.GITHUB_OWNER!,
       repo: pull.base.repo.name,
       pull_number: pull.number,
     })
@@ -96,10 +96,10 @@ export const postReviewComentReply = async (
   comment_id: number,
   reply: string,
 ) => {
-  const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID))
+  const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
 
   return octokit.rest.pulls.createReplyForReviewComment({
-    owner: process.env.GITHUB_OWNER,
+    owner: process.env.GITHUB_OWNER!,
     repo: pull.base.repo.name,
     pull_number: pull.number,
     comment_id,

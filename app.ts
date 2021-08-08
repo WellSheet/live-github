@@ -19,7 +19,7 @@ import { Message } from '@slack/web-api/dist/response/ConversationsHistoryRespon
 
 dotenv.config({ path: './.env.local' })
 
-const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET
+const githubWebhookSecret = process.env.GITHUB_WEBHOOK_SECRET!
 
 const webhooks = new Webhooks({
   secret: githubWebhookSecret,
@@ -35,7 +35,7 @@ if (process.env.SENTRY_DSN) {
 }
 
 const receiver = new SlackExpressReceiver({
-  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  signingSecret: process.env.SLACK_SIGNING_SECRET!,
 })
 
 const slackApp = new SlackApp({
@@ -48,8 +48,8 @@ expressApp.use('/', createNodeMiddleware(webhooks))
 expressApp.use('/', receiver.router)
 
 const githubApp = new GithubApp({
-  appId: process.env.GITHUB_APP_ID,
-  privateKey: process.env.GITHUB_PRIVATE_KEY,
+  appId: process.env.GITHUB_APP_ID!,
+  privateKey: process.env.GITHUB_PRIVATE_KEY!,
 })
 
 const channelNameFromPull = (pull: Pick<PullRequest, 'number' | 'base'>): string =>
@@ -58,28 +58,33 @@ const channelNameFromPull = (pull: Pick<PullRequest, 'number' | 'base'>): string
 const onChangePull = async (pull: PullRequest) => {
   console.log('onChangePull() called')
 
-  const channels = await getSlackChannels(slackApp)
+  const channels = (await getSlackChannels(slackApp))!
 
-  const pullChannel = channels.find(channel => channel.name === channelNameFromPull(pull))
+  let pullChannel = channels.find(channel => channel.name === channelNameFromPull(pull))
 
-  // if (!pullChannel) {
-  //   console.log(`No channel for PR${pull.number}`)
-  //   pullChannel = await createPullChannel(slackApp, pull)
+  if (!pullChannel) {
+    console.log(`No channel for PR${pull.number}`)
+    pullChannel = (await createPullChannel(slackApp, pull))!
 
-  //   await addInitialComment(githubApp, pull, pullChannel)
-  // }
+    await addInitialComment(githubApp, pull, pullChannel)
+  }
+
+  if (!pullChannel.id) {
+    console.log('The PR doesnt have an id')
+    return
+  }
 
   if (!pullChannel.is_archived) {
     await addReviewersToChannel(slackApp, pull, pullChannel)
 
     const me = (await slackApp.client.auth.test()).bot_id
     const messages: Message[] = await getChannelHistory(slackApp, pullChannel)
-    const botComment: Message = minBy(
+    const botComment = minBy(
       messages.filter(message => message.bot_id == me),
       (message: Message) => message.ts,
     )
 
-    if (botComment) {
+    if (botComment?.ts) {
       const slackText = slackTextFromPullRequest(pull)
       await slackApp.client.chat.update({
         channel: pullChannel.id,
@@ -87,7 +92,7 @@ const onChangePull = async (pull: PullRequest) => {
         text: slackText,
       })
     } else {
-      console.error('Could not find our own comment')
+      console.error('Could not find our own comment, or it was missing its timestamp')
     }
   }
 
@@ -112,20 +117,22 @@ const onSubmitPullRequestReview = async (payload: PullRequestReviewSubmittedEven
   const { review, pull_request: pull } = payload
 
   if (review.state === 'approved') {
-    const channels = await getSlackChannels(slackApp)
+    const channels = (await getSlackChannels(slackApp))!
 
     const pullChannel = channels.find(channel => channel.name === `pr-${pull.number}-${pull.base.repo.name}`)
 
-    try {
-      await slackApp.client.chat.postMessage({
-        channel: pullChannel.id,
-        text: `✅ <!here> ${review.user.login} approved this PR!`,
-      })
+    if (pullChannel?.id) {
+      try {
+        await slackApp.client.chat.postMessage({
+          channel: pullChannel.id,
+          text: `✅ <!here> ${review.user.login} approved this PR!`,
+        })
 
-      console.log(`✅ Channel ${pullChannel.name} - Successfully sent PR approval message`)
-    } catch (error) {
-      console.log(`❌ Channel ${pullChannel.name} - Failed to send PR approval message`)
-      console.log(error)
+        console.log(`✅ Channel ${pullChannel.name} - Successfully sent PR approval message`)
+      } catch (error) {
+        console.log(`❌ Channel ${pullChannel.name} - Failed to send PR approval message`)
+        console.log(error)
+      }
     }
   }
 }
@@ -139,11 +146,13 @@ webhooks.on('pull_request_review_comment.created', async ({ payload }) => {
   if (comment.body.toLowerCase().includes('take this to slack')) {
     const channelName = channelNameFromPull(pull_request)
 
-    const channels = await getSlackChannels(slackApp)
+    const channels = (await getSlackChannels(slackApp))!
 
     const pullChannel = channels.find(channel => channel.name === channelName)
 
-    const allComments = await getReviewComments(githubApp, pull_request)
+    if (!pullChannel?.id) return
+
+    const allComments = (await getReviewComments(githubApp, pull_request))!
     const relevantComments = allComments.filter(c => c.in_reply_to_id === comment.in_reply_to_id || c.id === comment.id)
     const contextComments: PullRequestReviewComment[] = sortBy(
       relevantComments,
@@ -198,7 +207,7 @@ webhooks.on('pull_request_review_comment.created', async ({ payload }) => {
 
     const slackUrlResponse = await slackApp.client.chat.getPermalink({
       channel: pullChannel.id,
-      message_ts: firstSlackComment.ts,
+      message_ts: firstSlackComment.ts!,
     })
 
     const githubCommentText = `We made a thread for you! Check it out here: ${slackUrlResponse.permalink}`
