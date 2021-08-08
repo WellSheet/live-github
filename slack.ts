@@ -1,7 +1,11 @@
 import { PullRequest, User } from '@octokit/webhooks-types'
 import { App as SlackApp } from '@slack/bolt'
 import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
+import dotenv from 'dotenv'
 import { Message } from '@slack/web-api/dist/response/ConversationsHistoryResponse'
+import { channelNameFromParts } from './util'
+
+dotenv.config({ path: './.env.local' })
 
 export const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID!)
 
@@ -52,7 +56,9 @@ export const getChannelHistory = async (slackApp: SlackApp, channel: Channel): P
   return await paginate(slackApp, botCommentResponse, x => x.messages)
 }
 
-export const slackTextFromPullRequest = (pull: PullRequest): string => {
+type CreatePullChannelPullRequest = Pick<PullRequest, 'html_url' | 'number' | 'title' | 'body'>
+
+export const slackTextFromPullRequest = (pull: CreatePullChannelPullRequest): string => {
   return `
 PR Opened! <${pull.html_url}|#${pull.number}>
 
@@ -64,10 +70,14 @@ ${pull.body}
 `
 }
 
-export const createPullChannel = async (slackApp: SlackApp, pull: PullRequest): Promise<Channel> => {
+export const createPullChannel = async (
+  slackApp: SlackApp,
+  repoName: string,
+  pull: CreatePullChannelPullRequest,
+): Promise<Channel> => {
   try {
     const newChannel = await slackApp.client.conversations.create({
-      name: `pr-${pull.number}-${pull.base.repo.name}`,
+      name: channelNameFromParts(repoName, pull.number),
     })
     const newChannelId = newChannel.channel!.id!
 

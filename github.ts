@@ -1,30 +1,55 @@
 import { App as GithubApp } from 'octokit'
 import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
 import { SayFn, SlashCommand } from '@slack/bolt'
-import { PullRequest, PullRequestReviewComment } from '@octokit/webhooks-types'
+import { PullRequest, PullRequestReviewComment, IssueComment } from '@octokit/webhooks-types'
+import { channelNameFromPull, pathToAppUrl } from './util'
 
-export const addInitialComment = async (githubApp: GithubApp, pull: PullRequest, channel: Channel): Promise<void> => {
+const GITHUB_COMMENT_MARKER = 'live-github-managed-comment'
+
+export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: PullRequest): Promise<void> => {
   const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
+  const channelName = channelNameFromPull(pull)
+  const openSlackUrl = pathToAppUrl(`/app/openSlackChannel/v1/${pull.base.repo.name}/${pull.number}`)
 
-  const commentBody = `A Slack Channel was created for discussion of this PR :tada:
+  const existingComments = await getPullComments(githubApp, pull)
+  const existingManagedComment = existingComments.find(comment => comment.body?.includes(GITHUB_COMMENT_MARKER))
 
-The channel name is \`${channel.name}\`. All the reviewers have been invited to the channel, and it will be archived when the PR closes.
+  const commentBody = `
+<!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->
+<!-- ${GITHUB_COMMENT_MARKER} -->
+LiveGithub is listening to this PR :ear:
 
-[Click Here to open the channel](https://slack.com/app_redirect?channel=${channel.id})`
+LiveGithub can create a Slack Channel specifcally for this PR. When it's created all the reviewers will be invited to the channel, and it will be archived when the PR closes.
 
-  try {
-    await octokit.rest.issues.createComment({
-      owner: process.env.GITHUB_OWNER!,
-      repo: pull.base.repo.name,
-      issue_number: pull.number,
-      body: commentBody,
-    })
+The channel name will be \`${channelName}\`.
 
-    console.log(`✅ Channel ${channel.name}: Successfully added initial comment`)
-  } catch (error) {
-    console.log(`❌ Channel ${channel.name}: Failed to add initial comment`)
-    console.log(error)
-    throw error
+[Click Here to Create and Open the channel](${openSlackUrl})
+`.trim()
+
+  if (existingManagedComment) {
+    if (existingManagedComment.body !== commentBody)
+      await octokit.rest.issues.updateComment({
+        owner: process.env.GITHUB_OWNER!,
+        repo: pull.base.repo.name,
+        issue_number: pull.number,
+        body: commentBody,
+        comment_id: existingManagedComment.id,
+      })
+  } else {
+    try {
+      await octokit.rest.issues.createComment({
+        owner: process.env.GITHUB_OWNER!,
+        repo: pull.base.repo.name,
+        issue_number: pull.number,
+        body: commentBody,
+      })
+
+      console.log(`✅ Channel ${channelName}: Successfully added initial comment`)
+    } catch (error) {
+      console.log(`❌ Channel ${channelName}: Failed to add initial comment`)
+      console.log(error)
+      throw error
+    }
   }
 }
 
@@ -75,10 +100,7 @@ export const getApproveReview = async (githubApp: GithubApp, pull: PullRequest) 
   }
 }
 
-export const getReviewComments = async (
-  githubApp: GithubApp,
-  pull: Pick<PullRequest, 'number' | 'base'>,
-): Promise<PullRequestReviewComment[]> => {
+export const getReviewComments = async (githubApp: GithubApp, pull: Pick<PullRequest, 'number' | 'base'>) => {
   try {
     const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
 
@@ -89,12 +111,36 @@ export const getReviewComments = async (
     })
 
     console.log(`✅ PR#${pull.number}: Successfully fetched review comments`)
-    return reviewComments.data as PullRequestReviewComment[]
+    return reviewComments.data
   } catch (error) {
     console.log(`❌ PR#${pull.number}: Failed to fetch review comments`)
     console.log(error)
     throw error
   }
+}
+
+export const getPullComments = async (githubApp: GithubApp, pull: Pick<PullRequest, 'number' | 'base'>) => {
+  const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
+
+  const response = await octokit.rest.issues.listComments({
+    owner: process.env.GITHUB_OWNER!,
+    repo: pull.base.repo.name,
+    issue_number: pull.number,
+  })
+
+  return response.data
+}
+
+export const getPullRequest = async (githubApp: GithubApp, repoName: string, pullNumber: number) => {
+  const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
+
+  const response = await octokit.rest.pulls.get({
+    owner: process.env.GITHUB_OWNER!,
+    repo: repoName,
+    pull_number: pullNumber,
+  })
+
+  return response.data
 }
 
 export const postReviewComentReply = async (
