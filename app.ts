@@ -1,5 +1,5 @@
 import { App as GithubApp } from 'octokit'
-import { App as SlackApp, ExpressReceiver as SlackExpressReceiver } from '@slack/bolt'
+import { App as SlackApp, KnownBlock, ExpressReceiver as SlackExpressReceiver } from '@slack/bolt'
 import dotenv from 'dotenv'
 import express from 'express'
 import Raven from 'raven'
@@ -60,14 +60,14 @@ const onChangePull = async (pull: PullRequest) => {
 
   const channels = await getSlackChannels(slackApp)
 
-  let pullChannel = channels.find(channel => channel.name === channelNameFromPull(pull))
+  const pullChannel = channels.find(channel => channel.name === channelNameFromPull(pull))
 
-  if (!pullChannel) {
-    console.log(`No channel for PR${pull.number}`)
-    pullChannel = await createPullChannel(slackApp, pull)
+  // if (!pullChannel) {
+  //   console.log(`No channel for PR${pull.number}`)
+  //   pullChannel = await createPullChannel(slackApp, pull)
 
-    await addInitialComment(githubApp, pull, pullChannel)
-  }
+  //   await addInitialComment(githubApp, pull, pullChannel)
+  // }
 
   if (!pullChannel.is_archived) {
     await addReviewersToChannel(slackApp, pull, pullChannel)
@@ -153,8 +153,8 @@ webhooks.on('pull_request_review_comment.created', async ({ payload }) => {
     const msgContext = contextComments.map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
     const firstMessageText = `:sonic: We are moving to Slack!\n\n${msgContext}`
 
-    const contextBlocks = flatten(
-      contextComments.map(comment => [
+    const contextBlocks: KnownBlock[] = flatten(
+      contextComments.map((comment): KnownBlock[] => [
         {
           type: 'section',
           text: {
@@ -178,15 +178,15 @@ webhooks.on('pull_request_review_comment.created', async ({ payload }) => {
     )
     contextBlocks.pop()
 
-    const blocks = [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `:sonic: We are moving to Slack! Here is the context from Github (most recent 15 comments)\nView the whole thread here: ${relevantComments[0].html_url}`,
-        },
+    const firstBlock: KnownBlock = {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: `:sonic: We are moving to Slack! Here is the context from Github (most recent 15 comments)\nView the whole thread here: ${relevantComments[0].html_url}`,
       },
-    ].concat(contextBlocks)
+    }
+
+    const blocks: KnownBlock[] = [firstBlock, ...contextBlocks]
 
     const firstSlackComment = await slackApp.client.chat.postMessage({
       channel: pullChannel.id,

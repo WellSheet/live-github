@@ -27,7 +27,7 @@ const paginate = async <T>(
   return collection
 }
 
-export const getSlackChannels = async (slackApp: SlackApp) => {
+export const getSlackChannels = async (slackApp: SlackApp): Promise<Channel[]> => {
   try {
     const initChannels = await slackApp.client.conversations.list()
     const allChannels: Channel[] = await paginate(slackApp, initChannels, x => x.channels)
