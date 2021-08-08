@@ -1,28 +1,28 @@
-import { App as SlackApp } from "@slack/bolt";
+import { App as SlackApp } from '@slack/bolt'
 
 const slackApp = new SlackApp({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-});
+})
 
 const mapGithubUserToSlackId = async () => {
-  const gitUserToSlackEmail = JSON.parse(process.env.GIT_USER_TO_SLACK_EMAIL);
+  const gitUserToSlackEmail = JSON.parse(process.env.GIT_USER_TO_SLACK_EMAIL)
 
-  const allSlackUsers = await slackApp.client.users.list();
+  const allSlackUsers = await slackApp.client.users.list()
 
-  const emailToSlackIdMap = {};
+  const emailToSlackIdMap = {}
 
-  allSlackUsers.members.forEach((member) => {
-    emailToSlackIdMap[member.profile.email] = member.id;
-  });
+  allSlackUsers.members.forEach(member => {
+    emailToSlackIdMap[member.profile.email] = member.id
+  })
 
-  const gitUserToSlackId = Object.keys(gitUserToSlackEmail).map((gitUser) => {
-    const email = gitUserToSlackEmail[gitUser];
+  const gitUserToSlackId = Object.keys(gitUserToSlackEmail).map(gitUser => {
+    const email = gitUserToSlackEmail[gitUser]
 
-    const slackId = emailToSlackIdMap[email];
+    const slackId = emailToSlackIdMap[email]
 
-    return { gitUser, slackId };
-  });
+    return { gitUser, slackId }
+  })
 
-  console.log(gitUserToSlackId);
-};
+  console.log(gitUserToSlackId)
+}
