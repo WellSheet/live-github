@@ -57,13 +57,13 @@ const channelNameFromPull = (pull: Pick<PullRequest, 'number' | 'base'>): string
 const onChangePull = async (pull: PullRequest) => {
   console.log('onChangePull() called')
 
-  const channels = (await getSlackChannels(slackApp))!
+  const channels = await getSlackChannels(slackApp)
 
   let pullChannel = channels.find(channel => channel.name === channelNameFromPull(pull))
 
   if (!pullChannel) {
     console.log(`No channel for PR${pull.number}`)
-    pullChannel = (await createPullChannel(slackApp, pull))!
+    pullChannel = await createPullChannel(slackApp, pull)
 
     await addInitialComment(githubApp, pull, pullChannel)
   }
@@ -116,7 +116,7 @@ const onSubmitPullRequestReview = async (payload: PullRequestReviewSubmittedEven
   const { review, pull_request: pull } = payload
 
   if (review.state === 'approved') {
-    const channels = (await getSlackChannels(slackApp))!
+    const channels = await getSlackChannels(slackApp)
 
     const pullChannel = channels.find(channel => channel.name === `pr-${pull.number}-${pull.base.repo.name}`)
 
@@ -145,13 +145,13 @@ webhooks.on('pull_request_review_comment.created', async ({ payload }) => {
   if (comment.body.toLowerCase().includes('take this to slack')) {
     const channelName = channelNameFromPull(pull_request)
 
-    const channels = (await getSlackChannels(slackApp))!
+    const channels = await getSlackChannels(slackApp)
 
     const pullChannel = channels.find(channel => channel.name === channelName)
 
     if (!pullChannel?.id) return
 
-    const allComments = (await getReviewComments(githubApp, pull_request))!
+    const allComments = await getReviewComments(githubApp, pull_request)
     const relevantComments = allComments.filter(c => c.in_reply_to_id === comment.in_reply_to_id || c.id === comment.id)
     const contextComments: PullRequestReviewComment[] = sortBy(
       relevantComments,

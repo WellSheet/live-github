@@ -72,7 +72,10 @@ export const getApproveReview = async (githubApp: GithubApp, pull: PullRequest) 
   }
 }
 
-export const getReviewComments = async (githubApp: GithubApp, pull: Pick<PullRequest, 'number' | 'base'>) => {
+export const getReviewComments = async (
+  githubApp: GithubApp,
+  pull: Pick<PullRequest, 'number' | 'base'>,
+): Promise<PullRequestReviewComment[]> => {
   try {
     const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
 
@@ -87,6 +90,7 @@ export const getReviewComments = async (githubApp: GithubApp, pull: Pick<PullReq
   } catch (error) {
     console.log(`❌ PR#${pull.number}: Failed to fetch review comments`)
     console.log(error)
+    throw error
   }
 }
 

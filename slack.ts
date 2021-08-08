@@ -27,7 +27,7 @@ const paginate = async <T>(
   return collection
 }
 
-export const getSlackChannels = async (slackApp: SlackApp): Promise<Channel[] | undefined> => {
+export const getSlackChannels = async (slackApp: SlackApp): Promise<Channel[]> => {
   try {
     const initChannels = await slackApp.client.conversations.list()
     const allChannels: Channel[] = await paginate(slackApp, initChannels, x => x.channels)
@@ -37,6 +37,7 @@ export const getSlackChannels = async (slackApp: SlackApp): Promise<Channel[] | 
   } catch (error) {
     console.log('❌ Error - fetched all channels')
     console.log(error)
+    throw error
   }
 }
 
@@ -63,7 +64,7 @@ ${pull.body}
 `
 }
 
-export const createPullChannel = async (slackApp: SlackApp, pull: PullRequest): Promise<Channel | undefined> => {
+export const createPullChannel = async (slackApp: SlackApp, pull: PullRequest): Promise<Channel> => {
   try {
     const newChannel = await slackApp.client.conversations.create({
       name: `pr-${pull.number}-${pull.base.repo.name}`,
@@ -83,11 +84,14 @@ export const createPullChannel = async (slackApp: SlackApp, pull: PullRequest): 
       topic: pull.title,
     })
 
+    if (!newChannel.channel) throw 'Channel was not in createChannelResponse'
+
     console.log(`✅ PR#${pull.number}: Successfully created channel`)
     return newChannel.channel
   } catch (error) {
     console.log(`❌ PR#${pull.number}: Failed to create channel`)
     console.log(error)
+    throw error
   }
 }
 
