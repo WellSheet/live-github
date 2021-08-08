@@ -3,6 +3,7 @@ import { App as SlackApp } from '@slack/bolt'
 import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
 import dotenv from 'dotenv'
 import { Message } from '@slack/web-api/dist/response/ConversationsHistoryResponse'
+import { channelNameFromParts } from './util'
 
 dotenv.config({ path: './.env.local' })
 
@@ -76,7 +77,7 @@ export const createPullChannel = async (
 ): Promise<Channel> => {
   try {
     const newChannel = await slackApp.client.conversations.create({
-      name: `pr-${pull.number}-${repoName}`,
+      name: channelNameFromParts(repoName, pull.number),
     })
     const newChannelId = newChannel.channel!.id!
 

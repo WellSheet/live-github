@@ -128,7 +128,8 @@ const onSubmitPullRequestReview = async (payload: PullRequestReviewSubmittedEven
   if (review.state === 'approved') {
     const channels = await getSlackChannels(slackApp)
 
-    const pullChannel = channels.find(channel => channel.name === `pr-${pull.number}-${pull.base.repo.name}`)
+    const channelName = channelNameFromPull(pull)
+    const pullChannel = channels.find(channel => channel.name === channelName)
 
     if (pullChannel?.id) {
       try {
