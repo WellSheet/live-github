@@ -61,6 +61,7 @@ expressApp.get('/app/openSlackChannel/v1/:repoName/:pullNumber', async (req, res
 
   if (!pullChannel) {
     const pullRequest = await getPullRequest(githubApp, repoName, parseInt(pullNumber))
+    await onChangePull(pullRequest)
     pullChannel = await createPullChannel(slackApp, repoName, pullRequest)
   }
 
