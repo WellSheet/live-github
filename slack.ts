@@ -7,13 +7,15 @@ export const gitUserToSlackId = JSON.parse(process.env.GIT_USER_TO_SLACK_ID)
 
 const paginate = async <T>(
   slackApp: SlackApp,
-  initialQuery: any,
-  extractElements: (query: any) => T[],
+  initialQuery: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  extractElements: (query: any) => T[], // eslint-disable-line @typescript-eslint/no-explicit-any
 ): Promise<T[]> => {
   let collection = extractElements(initialQuery)
 
   let nextCursor = initialQuery.response_metadata.next_cursor
   while (nextCursor) {
+    // TODO: Ummmm this is very broken lol
+    // The method below is hard-coded. Need to fix this
     const moreElements = await slackApp.client.conversations.list({
       cursor: nextCursor,
     })

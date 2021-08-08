@@ -1,5 +1,5 @@
 import { App as GithubApp } from 'octokit'
-import { App as SlackApp, Block, ExpressReceiver as SlackExpressReceiver } from '@slack/bolt'
+import { App as SlackApp, ExpressReceiver as SlackExpressReceiver } from '@slack/bolt'
 import dotenv from 'dotenv'
 import express from 'express'
 import Raven from 'raven'
@@ -14,7 +14,7 @@ import {
 } from './slack'
 import { PullRequest, PullRequestReviewComment, PullRequestReviewSubmittedEvent } from '@octokit/webhooks-types'
 import { minBy, sortBy, flatten } from 'lodash'
-import { addInitialComment, addComment, getApproveReview, postReviewComentReply, getReviewComments } from './github'
+import { addInitialComment, addComment, postReviewComentReply, getReviewComments } from './github'
 import { Message } from '@slack/web-api/dist/response/ConversationsHistoryResponse'
 
 dotenv.config({ path: './.env.local' })

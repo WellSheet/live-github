@@ -3,7 +3,7 @@ import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
 import { SayFn, SlashCommand } from '@slack/bolt'
 import { PullRequest, PullRequestReviewComment } from '@octokit/webhooks-types'
 
-export const addInitialComment = async (githubApp: GithubApp, pull: PullRequest, channel: Channel) => {
+export const addInitialComment = async (githubApp: GithubApp, pull: PullRequest, channel: Channel): Promise<void> => {
   const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID))
 
   const commentBody = `A Slack Channel was created for discussion of this PR :tada:
@@ -27,7 +27,7 @@ The channel name is \`${channel.name}\`. All the reviewers have been invited to 
   }
 }
 
-export const addComment = async (githubApp: GithubApp, command: SlashCommand, say: SayFn) => {
+export const addComment = async (githubApp: GithubApp, command: SlashCommand, say: SayFn): Promise<void> => {
   const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID))
 
   const splitName = command.channel_name.split('-')
