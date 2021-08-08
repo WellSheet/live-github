@@ -81,42 +81,39 @@ const onChangePull = async (pull: PullRequest) => {
 
   await addOrUpdateManagedComment(githubApp, pull)
 
-  if (!pullChannel?.id) {
-    console.log('The PullRequest channel has not been created yet. Or it does not have an `id`')
-    return
-  }
+  if (pullChannel && pullChannel.id) {
+    if (!pullChannel.is_archived) {
+      await addReviewersToChannel(slackApp, pull, pullChannel)
 
-  if (!pullChannel.is_archived) {
-    await addReviewersToChannel(slackApp, pull, pullChannel)
+      const me = (await slackApp.client.auth.test()).bot_id
+      const messages: Message[] = await getChannelHistory(slackApp, pullChannel)
+      const botComment = minBy(
+        messages.filter(message => message.bot_id == me),
+        (message: Message) => message.ts,
+      )
 
-    const me = (await slackApp.client.auth.test()).bot_id
-    const messages: Message[] = await getChannelHistory(slackApp, pullChannel)
-    const botComment = minBy(
-      messages.filter(message => message.bot_id == me),
-      (message: Message) => message.ts,
-    )
-
-    if (botComment?.ts) {
-      const slackText = slackTextFromPullRequest(pull)
-      await slackApp.client.chat.update({
-        channel: pullChannel.id,
-        ts: botComment.ts,
-        text: slackText,
-      })
-    } else {
-      console.error('Could not find our own comment, or it was missing its timestamp')
+      if (botComment?.ts) {
+        const slackText = slackTextFromPullRequest(pull)
+        await slackApp.client.chat.update({
+          channel: pullChannel.id,
+          ts: botComment.ts,
+          text: slackText,
+        })
+      } else {
+        console.error('Could not find our own comment, or it was missing its timestamp')
+      }
     }
-  }
 
-  if (pull.state === 'closed') {
-    console.log(`Channel ${pullChannel.name}: About to archive`)
+    if (pull.state === 'closed' && !pullChannel.is_archived) {
+      console.log(`Channel ${pullChannel.name}: About to archive`)
 
-    try {
-      await slackApp.client.conversations.archive({ channel: pullChannel.id })
-      console.log(`✅ Channel ${pullChannel.name}: Successfully archived`)
-    } catch (error) {
-      console.log(`❌ Channel ${pullChannel.name}: Failed to archive`)
-      console.log(error)
+      try {
+        await slackApp.client.conversations.archive({ channel: pullChannel.id })
+        console.log(`✅ Channel ${pullChannel.name}: Successfully archived`)
+      } catch (error) {
+        console.log(`❌ Channel ${pullChannel.name}: Failed to archive`)
+        console.log(error)
+      }
     }
   }
 }
