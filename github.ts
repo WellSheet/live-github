@@ -15,6 +15,7 @@ export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: Pull
   const existingManagedComment = existingComments.find(comment => comment.body?.includes(GITHUB_COMMENT_MARKER))
 
   const commentBody = `
+<!-- Do NOT delete this comments. They are used by Live Github to track this Pull Request -->
 <!-- ${GITHUB_COMMENT_MARKER} -->
 LiveGithub is listening to this PR :ear:
 
