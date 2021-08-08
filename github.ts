@@ -9,7 +9,7 @@ const GITHUB_COMMENT_MARKER = 'live-github-managed-comment'
 export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: PullRequest): Promise<void> => {
   const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
   const channelName = channelNameFromPull(pull)
-  const openSlackUrl = pathToAppUrl(`/app/openSlackChannel/${pull.base.repo.name}/${pull.number}`)
+  const openSlackUrl = pathToAppUrl(`/app/openSlackChannel/v1/${pull.base.repo.name}/${pull.number}`)
 
   const existingComments = await getPullComments(githubApp, pull)
   const existingManagedComment = existingComments.find(comment => comment.body?.includes(GITHUB_COMMENT_MARKER))
