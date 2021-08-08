@@ -2,7 +2,7 @@ import { App as GithubApp } from 'octokit'
 import { App as SlackApp, KnownBlock, ExpressReceiver as SlackExpressReceiver } from '@slack/bolt'
 import dotenv from 'dotenv'
 import express from 'express'
-import Raven from 'raven'
+import * as Sentry from '@sentry/node'
 import { Webhooks, createNodeMiddleware } from '@octokit/webhooks'
 import {
   addReviewersToChannel,
@@ -28,11 +28,10 @@ const webhooks = new Webhooks({
 const expressApp = express()
 
 if (process.env.SENTRY_DSN) {
-  Raven.config(process.env.SENTRY_DSN).install()
-
-  expressApp.use(Raven.requestHandler())
-  expressApp.use(Raven.errorHandler())
+  Sentry.init({ dsn: process.env.SENTRY_DSN })
 }
+
+expressApp.use(Sentry.Handlers.requestHandler())
 
 const receiver = new SlackExpressReceiver({
   signingSecret: process.env.SLACK_SIGNING_SECRET!,
@@ -225,6 +224,8 @@ slackApp.command('/add-pr-comment', async ({ command, ack, say, respond }) => {
     })
   await addComment(githubApp, command, say)
 })
+
+expressApp.use(Sentry.Handlers.errorHandler())
 
 const port = process.env.PORT || '3000'
 expressApp.listen(parseInt(port))
