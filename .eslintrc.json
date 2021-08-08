@@ -1,0 +1,38 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier",
+    "plugin:prettier/recommended"
+  ],
+  "env": {
+    "node": true
+  },
+  "parserOptions": {
+    "ecmaVersion":  2018,
+    "sourceType":  "module"
+  },
+  "plugins": ["simple-import-sort"],
+  "rules":  {
+    "@typescript-eslint/member-delimiter-style": ["error", {
+      "multiline": {
+          "delimiter": "none",
+          "requireLast": true
+      }
+    }],
+    "@typescript-eslint/no-empty-function": ["error", {
+      "allow": ["arrowFunctions"]
+    }],
+    "@typescript-eslint/no-explicit-any": "error",
+    "no-debugger": "error",
+    "no-console": "error",
+    "simple-import-sort/sort": ["error", {
+      "groups": [
+        ["^\\u0000"],
+        ["^(@(?!App|Spec))?\\w"],
+        ["^[^.]"],
+        ["^\\."]
+      ]}]
+  }
+}

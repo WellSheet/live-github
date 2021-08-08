@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "serve": "nodemon app.ts",
-    "heroku-serve": "node ./dist/app.js"
+    "heroku-serve": "node ./dist/app.js",
+    "lint": "eslint . --ext js,ts,tsx"
   },
   "author": "wellsheet",
   "license": "MIT",
@@ -25,5 +26,14 @@
     "raven": "^2.6.4",
     "ts-node": "^10.1.0",
     "typescript": "^4.3.5"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.29.0",
+    "@typescript-eslint/parser": "^4.29.0",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "prettier": "^2.3.2"
   }
 }
