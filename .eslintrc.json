@@ -25,14 +25,6 @@
       "allow": ["arrowFunctions"]
     }],
     "@typescript-eslint/no-explicit-any": "error",
-    "no-debugger": "error",
-    "no-console": "error",
-    "simple-import-sort/sort": ["error", {
-      "groups": [
-        ["^\\u0000"],
-        ["^(@(?!App|Spec))?\\w"],
-        ["^[^.]"],
-        ["^\\."]
-      ]}]
+    "no-debugger": "error"
   }
 }
