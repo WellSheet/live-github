@@ -24,6 +24,7 @@ The channel name is \`${channel.name}\`. All the reviewers have been invited to 
   } catch (error) {
     console.log(`❌ Channel ${channel.name}: Failed to add initial comment`)
     console.log(error)
+    throw error
   }
 }
 
@@ -50,6 +51,7 @@ export const addComment = async (githubApp: GithubApp, command: SlashCommand, sa
   } catch (error) {
     console.log(`❌ Channel ${command.channel_name}: Failed to add a comment`)
     console.log(error)
+    throw error
   }
 }
 
@@ -69,6 +71,7 @@ export const getApproveReview = async (githubApp: GithubApp, pull: PullRequest) 
   } catch (error) {
     console.log(`❌ PR#${pull.number}: Failed to fetch reviews`)
     console.log(error)
+    throw error
   }
 }
 

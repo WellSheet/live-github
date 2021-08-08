@@ -109,6 +109,7 @@ const getAllMembers = async (slackApp: SlackApp, pull: PullRequest, channel: Cha
   } catch (error) {
     console.log(`❌ PR#${pull.number}: Failed to fetched all slack members`)
     console.log(error)
+    throw error
   }
 }
 
@@ -136,5 +137,6 @@ export const addReviewersToChannel = async (slackApp: SlackApp, pull: PullReques
   } catch (error) {
     console.log(`❌ PR#${pull.number}: Failed to add requested reviewers to slack channel`)
     console.log(error)
+    throw error
   }
 }
