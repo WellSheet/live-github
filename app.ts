@@ -14,8 +14,15 @@ import {
 } from './slack'
 import { PullRequest, PullRequestReviewComment, PullRequestReviewSubmittedEvent } from '@octokit/webhooks-types'
 import { minBy, sortBy, flatten } from 'lodash'
-import { addInitialComment, addComment, postReviewComentReply, getReviewComments } from './github'
+import {
+  addOrUpdateManagedComment,
+  addComment,
+  postReviewComentReply,
+  getReviewComments,
+  getPullRequest,
+} from './github'
 import { Message } from '@slack/web-api/dist/response/ConversationsHistoryResponse'
+import { channelNameFromParts, channelNameFromPull } from './util'
 
 dotenv.config({ path: './.env.local' })
 
@@ -46,30 +53,36 @@ const slackApp = new SlackApp({
 expressApp.use('/', createNodeMiddleware(webhooks))
 expressApp.use('/', receiver.router)
 
+expressApp.get('/app/openSlackChannel/v1/:repoName/:pullNumber', async (req, res) => {
+  const { repoName, pullNumber } = req.params
+  const channelName = channelNameFromParts(repoName, pullNumber)
+  const channels = await getSlackChannels(slackApp)
+  let pullChannel = channels.find(channel => channel.name === channelName)
+
+  if (!pullChannel) {
+    const pullRequest = await getPullRequest(githubApp, repoName, parseInt(pullNumber))
+    pullChannel = await createPullChannel(slackApp, repoName, pullRequest)
+  }
+
+  const slackRedirectUrl = `https://slack.com/app_redirect?channel=${pullChannel.id}`
+  res.redirect(slackRedirectUrl)
+})
+
 const githubApp = new GithubApp({
   appId: process.env.GITHUB_APP_ID!,
   privateKey: process.env.GITHUB_PRIVATE_KEY!,
 })
 
-const channelNameFromPull = (pull: Pick<PullRequest, 'number' | 'base'>): string =>
-  `pr-${pull.number}-${pull.base.repo.name}`
-
 const onChangePull = async (pull: PullRequest) => {
   console.log('onChangePull() called')
 
   const channels = await getSlackChannels(slackApp)
+  const pullChannel = channels.find(channel => channel.name === channelNameFromPull(pull))
 
-  let pullChannel = channels.find(channel => channel.name === channelNameFromPull(pull))
+  await addOrUpdateManagedComment(githubApp, pull)
 
-  if (!pullChannel) {
-    console.log(`No channel for PR${pull.number}`)
-    pullChannel = await createPullChannel(slackApp, pull)
-
-    await addInitialComment(githubApp, pull, pullChannel)
-  }
-
-  if (!pullChannel.id) {
-    console.log('The PR doesnt have an id')
+  if (!pullChannel?.id) {
+    console.log('The PullRequest channel has not been created yet. Or it does not have an `id`')
     return
   }
 
@@ -147,18 +160,21 @@ webhooks.on('pull_request_review_comment.created', async ({ payload }) => {
 
     const channels = await getSlackChannels(slackApp)
 
-    const pullChannel = channels.find(channel => channel.name === channelName)
+    let pullChannel = channels.find(channel => channel.name === channelName)
 
-    if (!pullChannel?.id) return
+    if (!pullChannel) {
+      pullChannel = await createPullChannel(slackApp, pull_request.base.repo.name, pull_request)
+    }
+
+    if (!pullChannel.id) throw 'The Pull Channel has no id, and thats not something we can handle'
 
     const allComments = await getReviewComments(githubApp, pull_request)
     const relevantComments = allComments.filter(c => c.in_reply_to_id === comment.in_reply_to_id || c.id === comment.id)
-    const contextComments: PullRequestReviewComment[] = sortBy(
-      relevantComments,
-      (comment: PullRequestReviewComment) => comment.created_at,
-    ).slice(-15)
+    const contextComments = sortBy(relevantComments, comment => comment.created_at).slice(-15)
 
-    const msgContext = contextComments.map(comment => `Written By: ${comment.user.login}\n${comment.body}`).join('\n\n')
+    const msgContext = contextComments
+      .map(comment => `Written By: ${comment.user!.login}\n${comment.body}`)
+      .join('\n\n')
     const firstMessageText = `:sonic: We are moving to Slack!\n\n${msgContext}`
 
     const contextBlocks: KnownBlock[] = flatten(
@@ -175,7 +191,7 @@ webhooks.on('pull_request_review_comment.created', async ({ payload }) => {
           elements: [
             {
               type: 'mrkdwn',
-              text: `Written by *${comment.user.login}* <@${gitUserToSlackId[comment.user.login]}>`,
+              text: `Written by *${comment.user!.login}* <@${gitUserToSlackId[comment.user!.login]}>`,
             },
           ],
         },
