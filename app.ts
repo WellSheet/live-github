@@ -2,6 +2,7 @@ import { App as GithubApp } from 'octokit'
 import { App as SlackApp, KnownBlock, ExpressReceiver as SlackExpressReceiver } from '@slack/bolt'
 import dotenv from 'dotenv'
 import express from 'express'
+import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
 import * as Sentry from '@sentry/node'
 import { Webhooks, createNodeMiddleware } from '@octokit/webhooks'
 import {
@@ -59,10 +60,13 @@ expressApp.get('/app/openSlackChannel/v1/:repoName/:pullNumber', async (req, res
   const channels = await getSlackChannels(slackApp)
   let pullChannel = channels.find(channel => channel.name === channelName)
 
+  const pullRequest = await getPullRequest(githubApp, repoName, parseInt(pullNumber))
+
   if (!pullChannel) {
-    const pullRequest = await getPullRequest(githubApp, repoName, parseInt(pullNumber))
     pullChannel = await createPullChannel(slackApp, repoName, pullRequest)
   }
+
+  await addReviewersToChannel(slackApp, pullRequest, pullChannel)
 
   const slackRedirectUrl = `https://slack.com/app_redirect?channel=${pullChannel.id}`
   res.redirect(slackRedirectUrl)
@@ -73,6 +77,52 @@ const githubApp = new GithubApp({
   privateKey: process.env.GITHUB_PRIVATE_KEY!,
 })
 
+const updateSlackMessage = async (pullChannel: Channel | undefined, pull: PullRequest) => {
+  if (!pullChannel?.id) return
+
+  const me = (await slackApp.client.auth.test()).bot_id
+  const messages: Message[] = await getChannelHistory(slackApp, pullChannel)
+  const botComment = minBy(
+    messages.filter(message => message.bot_id == me),
+    (message: Message) => message.ts,
+  )
+
+  if (botComment?.ts) {
+    const slackText = slackTextFromPullRequest(pull)
+    await slackApp.client.chat.update({
+      channel: pullChannel.id,
+      ts: botComment.ts,
+      text: slackText,
+    })
+  } else {
+    console.error('Could not find our own comment, or it was missing its timestamp')
+  }
+}
+
+const updateChannelMembers = async (slackApp: SlackApp, pullChannel: Channel | undefined, pull: PullRequest) => {
+  if (!pullChannel?.id) return
+
+  if (!pullChannel.is_archived) {
+    await addReviewersToChannel(slackApp, pull, pullChannel)
+  }
+}
+
+const updateChannelStatus = async (slackApp: SlackApp, pullChannel: Channel | undefined, pull: PullRequest) => {
+  if (!pullChannel?.id) return
+
+  if (pull.state === 'closed' && !pullChannel.is_archived) {
+    console.log(`Channel ${pullChannel.name}: About to archive`)
+
+    try {
+      await slackApp.client.conversations.archive({ channel: pullChannel.id })
+      console.log(`✅ Channel ${pullChannel.name}: Successfully archived`)
+    } catch (error) {
+      console.log(`❌ Channel ${pullChannel.name}: Failed to archive`)
+      console.log(error)
+    }
+  }
+}
+
 const onChangePull = async (pull: PullRequest) => {
   console.log('onChangePull() called')
 
@@ -81,41 +131,11 @@ const onChangePull = async (pull: PullRequest) => {
 
   await addOrUpdateManagedComment(githubApp, pull)
 
-  if (pullChannel && pullChannel.id) {
-    if (!pullChannel.is_archived) {
-      await addReviewersToChannel(slackApp, pull, pullChannel)
+  await updateSlackMessage(pullChannel, pull)
 
-      const me = (await slackApp.client.auth.test()).bot_id
-      const messages: Message[] = await getChannelHistory(slackApp, pullChannel)
-      const botComment = minBy(
-        messages.filter(message => message.bot_id == me),
-        (message: Message) => message.ts,
-      )
+  await updateChannelMembers(slackApp, pullChannel, pull)
 
-      if (botComment?.ts) {
-        const slackText = slackTextFromPullRequest(pull)
-        await slackApp.client.chat.update({
-          channel: pullChannel.id,
-          ts: botComment.ts,
-          text: slackText,
-        })
-      } else {
-        console.error('Could not find our own comment, or it was missing its timestamp')
-      }
-    }
-
-    if (pull.state === 'closed' && !pullChannel.is_archived) {
-      console.log(`Channel ${pullChannel.name}: About to archive`)
-
-      try {
-        await slackApp.client.conversations.archive({ channel: pullChannel.id })
-        console.log(`✅ Channel ${pullChannel.name}: Successfully archived`)
-      } catch (error) {
-        console.log(`❌ Channel ${pullChannel.name}: Failed to archive`)
-        console.log(error)
-      }
-    }
-  }
+  await updateChannelStatus(slackApp, pullChannel, pull)
 }
 
 webhooks.on('pull_request', async ({ payload }) => {
