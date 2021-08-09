@@ -1,9 +1,10 @@
-import { PullRequest, User } from '@octokit/webhooks-types'
+import { PullRequest, User, Team } from '@octokit/webhooks-types'
 import { App as SlackApp } from '@slack/bolt'
 import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
 import dotenv from 'dotenv'
 import { Message } from '@slack/web-api/dist/response/ConversationsHistoryResponse'
 import { channelNameFromParts } from './util'
+import { compact } from 'lodash'
 
 dotenv.config({ path: './.env.local' })
 
@@ -105,45 +106,45 @@ export const createPullChannel = async (
   }
 }
 
-const getAllMembers = async (slackApp: SlackApp, pull: PullRequest, channel: Channel) => {
+const getAllMembers = async (slackApp: SlackApp, channel: Channel) => {
   if (!channel.id) return []
 
-  try {
-    const members = await slackApp.client.conversations.members({
-      channel: channel.id,
-    })
-    const allMembers: string[] = await paginate(slackApp, members, x => x.members)
+  const members = await slackApp.client.conversations.members({
+    channel: channel.id,
+  })
+  const allMembers: string[] = await paginate(slackApp, members, x => x.members)
 
-    console.log(`✅ PR#${pull.number}: Successfully fetched all slack members`)
-    return allMembers
-  } catch (error) {
-    console.log(`❌ PR#${pull.number}: Failed to fetched all slack members`)
-    console.log(error)
-    throw error
-  }
+  return allMembers
 }
 
-export const addReviewersToChannel = async (slackApp: SlackApp, pull: PullRequest, channel: Channel) => {
+type AddReviewersToChannelPullRequest = Pick<PullRequest, 'number'> & {
+  user: { login: string } | null
+  requested_reviewers?: ({ login?: string } | null)[] | null
+}
+
+export const addReviewersToChannel = async (
+  slackApp: SlackApp,
+  pull: AddReviewersToChannelPullRequest,
+  channel: Channel,
+) => {
   try {
-    const allMembers = await getAllMembers(slackApp, pull, channel)
+    const allMembers = await getAllMembers(slackApp, channel)
 
-    const reviewers = pull.requested_reviewers
-      .map(reviewer => 'login' in reviewer && gitUserToSlackId[reviewer.login])
-      .concat(gitUserToSlackId[pull.user.login])
+    const reviewers =
+      pull.requested_reviewers?.map(reviewer => reviewer && reviewer.login && gitUserToSlackId[reviewer.login]) || []
 
-    const reviewerToInvite = reviewers.some(reviewer => !allMembers || !allMembers.includes(reviewer))
+    const potentialInvitees = compact([pull.user && gitUserToSlackId[pull.user.login], ...reviewers])
+    const invitees = potentialInvitees.filter(reviewer => !allMembers || !allMembers.includes(reviewer))
 
-    const reviewersString = reviewers.join(',')
-
-    if (reviewerToInvite && channel.id) {
+    if (invitees.length && channel.id) {
       await slackApp.client.conversations.invite({
         channel: channel.id,
         emails: [],
-        users: reviewersString,
+        users: invitees.join(','),
       })
     }
 
-    console.log(`✅ PR#${pull.number}: Successfully added ${reviewersString}`)
+    console.log(`✅ PR#${pull.number}: Successfully added ${invitees.join(',')}`)
   } catch (error) {
     console.log(`❌ PR#${pull.number}: Failed to add requested reviewers to slack channel`)
     console.log(error)
