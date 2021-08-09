@@ -60,12 +60,13 @@ expressApp.get('/app/openSlackChannel/v1/:repoName/:pullNumber', async (req, res
   const channels = await getSlackChannels(slackApp)
   let pullChannel = channels.find(channel => channel.name === channelName)
 
-  if (!pullChannel) {
-    const pullRequest = await getPullRequest(githubApp, repoName, parseInt(pullNumber))
-    pullChannel = await createPullChannel(slackApp, repoName, pullRequest)
+  const pullRequest = await getPullRequest(githubApp, repoName, parseInt(pullNumber))
 
-    await addReviewersToChannel(slackApp, pullRequest, pullChannel)
+  if (!pullChannel) {
+    pullChannel = await createPullChannel(slackApp, repoName, pullRequest)
   }
+
+  await addReviewersToChannel(slackApp, pullRequest, pullChannel)
 
   const slackRedirectUrl = `https://slack.com/app_redirect?channel=${pullChannel.id}`
   res.redirect(slackRedirectUrl)
