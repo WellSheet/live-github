@@ -155,7 +155,7 @@ const onSubmitPullRequestReview = async (payload: PullRequestReviewSubmittedEven
       try {
         await slackApp.client.chat.postMessage({
           channel: pullChannel.id,
-          text: `✅ <!here> ${review.user.login} approved this PR!`,
+          text: `✅ ${review.user.login} approved this PR!`,
         })
 
         console.log(`✅ Channel ${pullChannel.name} - Successfully sent PR approval message`)
