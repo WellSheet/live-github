@@ -1,7 +1,6 @@
 import { App as GithubApp } from 'octokit'
-import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
 import { SayFn, SlashCommand } from '@slack/bolt'
-import { PullRequest, PullRequestReviewComment, IssueComment } from '@octokit/webhooks-types'
+import { PullRequest } from '@octokit/webhooks-types'
 import { channelNameFromPull, pathToAppUrl } from './util'
 
 const GITHUB_COMMENT_MARKER = 'live-github-managed-comment'
