@@ -7,10 +7,6 @@ import { channelNameFromPull, pathToAppUrl } from './util'
 const GITHUB_COMMENT_MARKER = 'live-github-managed-comment'
 
 export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: PullRequest): Promise<void> => {
-  console.log('Number of Requested Reviewers: ' + pull.requested_reviewers.length)
-
-  if (pull.requested_reviewers.length !== 0) return
-
   const octokit = await githubApp.getInstallationOctokit(parseInt(process.env.GITHUB_INSTALLATION_ID!))
   const channelName = channelNameFromPull(pull)
   const openSlackUrl = pathToAppUrl(`/app/openSlackChannel/v1/${pull.base.repo.name}/${pull.number}`)
