@@ -32,8 +32,7 @@ The channel name will be \`${channelName}\`.
 [Click Here to Create and Open the channel](${openSlackUrl})
 `.trim()
 
-  console.log(hasExistingComment)
-  console.log(`existingManagedComment: ` + existingManagedComment)
+  console.log(existingManagedComment)
 
   if (existingManagedComment) {
     await octokit.rest.issues.deleteComment({
