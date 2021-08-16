@@ -14,6 +14,7 @@ export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: Pull
   const existingComments = await getPullComments(githubApp, pull)
   const existingManagedComment = existingComments.find(comment => comment.body?.includes(GITHUB_COMMENT_MARKER))
 
+  console.log(pull)
   console.log(existingComments)
 
   const commentBody = `
