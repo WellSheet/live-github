@@ -32,17 +32,15 @@ The channel name will be \`${channelName}\`.
 [Click Here to Create and Open the channel](${openSlackUrl})
 `.trim()
 
-  console.log(`hasExistingComment: ` + hasExistingComment)
+  console.log(hasExistingComment)
   console.log(`existingManagedComment: ` + existingManagedComment)
 
   if (existingManagedComment) {
-    if (existingManagedComment.body === commentBody) {
-      await octokit.rest.issues.deleteComment({
-        owner: process.env.GITHUB_OWNER!,
-        repo: pull.base.repo.name,
-        comment_id: existingManagedComment.id,
-      })
-    }
+    await octokit.rest.issues.deleteComment({
+      owner: process.env.GITHUB_OWNER!,
+      repo: pull.base.repo.name,
+      comment_id: existingManagedComment.id,
+    })
   }
 
   if (!hasExistingComment && pull.body) {
