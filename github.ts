@@ -12,24 +12,12 @@ export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: Pull
   const channelName = channelNameFromPull(pull)
   const openSlackUrl = pathToAppUrl(`/app/openSlackChannel/v1/${pull.base.repo.name}/${pull.number}`)
 
-  const splitBody = pull.body?.split('\n') ?? []
+  const existingComments = await getPullComments(githubApp, pull)
+  const existingManagedComment = existingComments.find(comment => comment.body?.includes(GITHUB_COMMENT_MARKER))
 
-  const hasExistingComment =
-    splitBody.includes(
-      '<!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->',
-    ) ||
-    splitBody.includes(`<!-- ${GITHUB_COMMENT_MARKER} -->`) ||
-    splitBody.includes('LiveGithub is listening to this PR :ear:') ||
-    splitBody.includes(
-      "LiveGithub can create a Slack Channel specifcally for this PR. When it's created all the reviewers will be invited to the channel, and it will be archived when the PR closes.",
-    )
-
-  console.log(splitBody.length)
-  console.log(splitBody)
+  const hasExistingComment = pull.body?.includes(GITHUB_COMMENT_MARKER)
 
   const commentBody = `
-
-  
 <!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->
 <!-- ${GITHUB_COMMENT_MARKER} -->
 
@@ -44,7 +32,17 @@ The channel name will be \`${channelName}\`.
 [Click Here to Create and Open the channel](${openSlackUrl})
 `.trim()
 
-  if (!hasExistingComment && !isEmpty(splitBody)) {
+  if (existingManagedComment) {
+    if (existingManagedComment.body === commentBody) {
+      await octokit.rest.issues.deleteComment({
+        owner: process.env.GITHUB_OWNER!,
+        repo: pull.base.repo.name,
+        comment_id: existingManagedComment.id,
+      })
+    }
+  }
+
+  if (!hasExistingComment && pull.body) {
     try {
       await octokit.rest.pulls.update({
         owner: process.env.GITHUB_OWNER!,
