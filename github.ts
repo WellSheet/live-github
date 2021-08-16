@@ -16,6 +16,9 @@ export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: Pull
   const hasExistingComment = pull.body?.split('\n').includes('LiveGithub is listening to this PR :ear:')
 
   const commentBody = `
+
+-----
+
 <!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->
 <!-- ${GITHUB_COMMENT_MARKER} -->
 LiveGithub is listening to this PR :ear:
