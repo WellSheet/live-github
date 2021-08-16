@@ -13,7 +13,7 @@ import {
   gitUserToSlackId,
   slackTextFromPullRequest,
 } from './slack'
-import { PullRequest, PullRequestReviewComment, PullRequestReviewSubmittedEvent } from '@octokit/webhooks-types'
+import { PullRequest, PullRequestReviewSubmittedEvent } from '@octokit/webhooks-types'
 import { minBy, sortBy, flatten } from 'lodash'
 import {
   addOrUpdateManagedComment,

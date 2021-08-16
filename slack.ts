@@ -1,4 +1,4 @@
-import { PullRequest, User, Team } from '@octokit/webhooks-types'
+import { PullRequest } from '@octokit/webhooks-types'
 import { App as SlackApp } from '@slack/bolt'
 import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
 import dotenv from 'dotenv'

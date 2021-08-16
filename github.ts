@@ -1,9 +1,7 @@
 import { App as GithubApp } from 'octokit'
-import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
 import { SayFn, SlashCommand } from '@slack/bolt'
-import { PullRequest, PullRequestReviewComment, IssueComment } from '@octokit/webhooks-types'
+import { PullRequest } from '@octokit/webhooks-types'
 import { channelNameFromPull, pathToAppUrl } from './util'
-import { isEmpty } from 'lodash'
 
 const GITHUB_COMMENT_MARKER = 'live-github-managed-comment'
 
@@ -32,14 +30,19 @@ The channel name will be \`${channelName}\`.
 [Click Here to Create and Open the channel](${openSlackUrl})
 `.trim()
 
-  console.log(existingManagedComment)
-
   if (existingManagedComment) {
-    await octokit.rest.issues.deleteComment({
-      owner: process.env.GITHUB_OWNER!,
-      repo: pull.base.repo.name,
-      comment_id: existingManagedComment.id,
-    })
+    try {
+      await octokit.rest.issues.deleteComment({
+        owner: process.env.GITHUB_OWNER!,
+        repo: pull.base.repo.name,
+        comment_id: existingManagedComment.id,
+      })
+      console.log(`✅ PR#${pull.number}: Successfully removed legacy comment`)
+    } catch (error) {
+      console.log(`❌ PR#${pull.number}: Failed to remove legacy comment`)
+      console.log(error)
+      throw error
+    }
   }
 
   if (!hasExistingComment && pull.body) {
@@ -51,9 +54,9 @@ The channel name will be \`${channelName}\`.
         body: pull.body + commentBody,
       })
 
-      console.log(`✅ Channel ${channelName}: Successfully added initial comment`)
+      console.log(`✅ PR#${pull.number}: Successfully added initial comment`)
     } catch (error) {
-      console.log(`❌ Channel ${channelName}: Failed to add initial comment`)
+      console.log(`❌ PR#${pull.number}: Failed to add initial comment`)
       console.log(error)
       throw error
     }
