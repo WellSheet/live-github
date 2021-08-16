@@ -11,11 +11,9 @@ export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: Pull
   const channelName = channelNameFromPull(pull)
   const openSlackUrl = pathToAppUrl(`/app/openSlackChannel/v1/${pull.base.repo.name}/${pull.number}`)
 
-  const existingComments = await getPullComments(githubApp, pull)
-  const existingManagedComment = existingComments.find(comment => comment.body?.includes(GITHUB_COMMENT_MARKER))
-
   console.log(pull)
-  console.log(existingComments)
+
+  const hasExistingComment = pull.body?.split('\n').includes('LiveGithub is listening to this PR :ear:')
 
   const commentBody = `
 <!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->
@@ -29,19 +27,21 @@ The channel name will be \`${channelName}\`.
 [Click Here to Create and Open the channel](${openSlackUrl})
 `.trim()
 
-  try {
-    await octokit.rest.pulls.update({
-      owner: process.env.GITHUB_OWNER!,
-      repo: pull.base.repo.name,
-      pull_number: pull.number,
-      body: pull.body + commentBody,
-    })
+  if (hasExistingComment) {
+    try {
+      await octokit.rest.pulls.update({
+        owner: process.env.GITHUB_OWNER!,
+        repo: pull.base.repo.name,
+        pull_number: pull.number,
+        body: pull.body + commentBody,
+      })
 
-    console.log(`✅ Channel ${channelName}: Successfully added initial comment`)
-  } catch (error) {
-    console.log(`❌ Channel ${channelName}: Failed to add initial comment`)
-    console.log(error)
-    throw error
+      console.log(`✅ Channel ${channelName}: Successfully added initial comment`)
+    } catch (error) {
+      console.log(`❌ Channel ${channelName}: Failed to add initial comment`)
+      console.log(error)
+      throw error
+    }
   }
 }
 
