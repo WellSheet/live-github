@@ -29,30 +29,19 @@ The channel name will be \`${channelName}\`.
 [Click Here to Create and Open the channel](${openSlackUrl})
 `.trim()
 
-  if (existingManagedComment) {
-    if (existingManagedComment.body !== commentBody)
-      await octokit.rest.issues.updateComment({
-        owner: process.env.GITHUB_OWNER!,
-        repo: pull.base.repo.name,
-        issue_number: pull.number,
-        body: commentBody,
-        comment_id: existingManagedComment.id,
-      })
-  } else {
-    try {
-      await octokit.rest.issues.createComment({
-        owner: process.env.GITHUB_OWNER!,
-        repo: pull.base.repo.name,
-        issue_number: pull.number,
-        body: commentBody,
-      })
+  try {
+    await octokit.rest.pulls.update({
+      owner: process.env.GITHUB_OWNER!,
+      repo: pull.base.repo.name,
+      pull_number: pull.number,
+      body: pull.body + commentBody,
+    })
 
-      console.log(`✅ Channel ${channelName}: Successfully added initial comment`)
-    } catch (error) {
-      console.log(`❌ Channel ${channelName}: Failed to add initial comment`)
-      console.log(error)
-      throw error
-    }
+    console.log(`✅ Channel ${channelName}: Successfully added initial comment`)
+  } catch (error) {
+    console.log(`❌ Channel ${channelName}: Failed to add initial comment`)
+    console.log(error)
+    throw error
   }
 }
 
