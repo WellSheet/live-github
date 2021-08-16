@@ -27,7 +27,7 @@ The channel name will be \`${channelName}\`.
 [Click Here to Create and Open the channel](${openSlackUrl})
 `.trim()
 
-  if (hasExistingComment) {
+  if (!hasExistingComment) {
     try {
       await octokit.rest.pulls.update({
         owner: process.env.GITHUB_OWNER!,
