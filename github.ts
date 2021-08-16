@@ -11,9 +11,11 @@ export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: Pull
   const channelName = channelNameFromPull(pull)
   const openSlackUrl = pathToAppUrl(`/app/openSlackChannel/v1/${pull.base.repo.name}/${pull.number}`)
 
-  const hasExistingComment = pull.body
-    ?.split('\n')
-    .includes('<!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->')
+  const hasExistingComment =
+    pull.body
+      ?.split('\n')
+      .includes('<!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->') ||
+    pull.body?.split('\n').includes(`<!-- ${GITHUB_COMMENT_MARKER} -->`)
 
   console.log(pull.body?.split('\n').length)
   console.log(pull.body?.split('\n'))
