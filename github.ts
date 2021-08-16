@@ -3,6 +3,7 @@ import { Channel } from '@slack/web-api/dist/response/ConversationsListResponse'
 import { SayFn, SlashCommand } from '@slack/bolt'
 import { PullRequest, PullRequestReviewComment, IssueComment } from '@octokit/webhooks-types'
 import { channelNameFromPull, pathToAppUrl } from './util'
+import { isEmpty } from 'lodash'
 
 const GITHUB_COMMENT_MARKER = 'live-github-managed-comment'
 
@@ -11,16 +12,24 @@ export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: Pull
   const channelName = channelNameFromPull(pull)
   const openSlackUrl = pathToAppUrl(`/app/openSlackChannel/v1/${pull.base.repo.name}/${pull.number}`)
 
-  const hasExistingComment =
-    pull.body
-      ?.split('\n')
-      .includes('<!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->') ||
-    pull.body?.split('\n').includes(`<!-- ${GITHUB_COMMENT_MARKER} -->`)
+  const splitBody = pull.body?.split('\n') ?? []
 
-  console.log(pull.body?.split('\n').length)
-  console.log(pull.body?.split('\n'))
+  const hasExistingComment =
+    splitBody.includes(
+      '<!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->',
+    ) ||
+    splitBody.includes(`<!-- ${GITHUB_COMMENT_MARKER} -->`) ||
+    splitBody.includes('LiveGithub is listening to this PR :ear:') ||
+    splitBody.includes(
+      "LiveGithub can create a Slack Channel specifcally for this PR. When it's created all the reviewers will be invited to the channel, and it will be archived when the PR closes.",
+    )
+
+  console.log(splitBody.length)
+  console.log(splitBody)
 
   const commentBody = `
+
+  
 <!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->
 <!-- ${GITHUB_COMMENT_MARKER} -->
 
@@ -35,7 +44,7 @@ The channel name will be \`${channelName}\`.
 [Click Here to Create and Open the channel](${openSlackUrl})
 `.trim()
 
-  if (!hasExistingComment) {
+  if (!hasExistingComment && !isEmpty(splitBody)) {
     try {
       await octokit.rest.pulls.update({
         owner: process.env.GITHUB_OWNER!,
