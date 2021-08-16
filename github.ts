@@ -11,16 +11,16 @@ export const addOrUpdateManagedComment = async (githubApp: GithubApp, pull: Pull
   const channelName = channelNameFromPull(pull)
   const openSlackUrl = pathToAppUrl(`/app/openSlackChannel/v1/${pull.base.repo.name}/${pull.number}`)
 
-  console.log(pull)
-
   const hasExistingComment = pull.body?.split('\n').includes('LiveGithub is listening to this PR :ear:')
 
+  console.log(pull.body)
+
   const commentBody = `
+<!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->
+<!-- ${GITHUB_COMMENT_MARKER} -->
 
 -----
 
-<!-- Do NOT delete these comments. They are used by Live Github to track this Pull Request -->
-<!-- ${GITHUB_COMMENT_MARKER} -->
 LiveGithub is listening to this PR :ear:
 
 LiveGithub can create a Slack Channel specifcally for this PR. When it's created all the reviewers will be invited to the channel, and it will be archived when the PR closes.
