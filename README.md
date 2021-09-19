@@ -7,4 +7,9 @@ At Wellsheet we found ourselves wanting a way to quickly collaborate on Pull Req
 Live Github tries to bridge the gap between Github Pull Requests and Slack. It makes it easy to create a dedicated channel from a Github Pull Request. It pulls in all the reviewers so that you can get answers quicker than Github comments allow!
 To not clog up your Slack channels list, this new channel will be automatically archived when the Pull Request is closed 🎉
 
+## Example Pull Request Screenshot
+
+![image](https://user-images.githubusercontent.com/964771/133940643-5864f242-67ef-4a08-9b6e-f0a472436bb4.png)
+
+
 Live Github was created during the 2021 Summer Hackathon at Wellsheet
