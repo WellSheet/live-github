@@ -51,7 +51,7 @@ The channel name will be \`${channelName}\`.
         owner: process.env.GITHUB_OWNER!,
         repo: pull.base.repo.name,
         pull_number: pull.number,
-        body: pull.body + commentBody,
+        body: pull.body + '\n\n' + commentBody,
       })
 
       console.log(`✅ PR#${pull.number}: Successfully added initial comment`)
